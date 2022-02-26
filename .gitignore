@@ -1,0 +1,10 @@
+
+# ignore the contents of inputs/public_inputs
+# because it is a cache for large downloaded files
+inputs/public_inputs/*
+!inputs/public_inputs/.gitkeep 
+
+
+__pycache__/
+*.~lock*
+
