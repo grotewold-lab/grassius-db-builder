@@ -47,12 +47,12 @@ for r in get_records_for_gene_ids(filepath,v3_ids):
     
     # append to final results
     df = blast_result.data
-    for row in df:
+    for row in df.index:
         new_row_index = len(result_df.index)
         result_df.loc[new_row_index,"v3_transcript_id"] = r.id
         result_df.loc[new_row_index,"matching_v5_chrom"] = df.loc[row,"Chrom"]
-        result_df.loc[new_row_index,"matching_v5_start_pos"] = df.loc[row,"Start Pos"]
-        result_df.loc[new_row_index,"matching_v5_stop_pos"] = df.loc[row,"Stop Pos"]
+        result_df.loc[new_row_index,"matching_v5_start_pos"] = df.loc[row,"Start_Pos"]
+        result_df.loc[new_row_index,"matching_v5_stop_pos"] = df.loc[row,"Stop_Pos"]
         result_df.loc[new_row_index,"matching_v5_gene_id"] = df.loc[row,"Gene ID"]
         result_df.loc[new_row_index,"Identities%"] = df.loc[row,"Identities%"]
         
