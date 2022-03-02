@@ -1,2 +1,2 @@
 from .blast_result import BlastResult
-from .util import prepare_blast_db, run_tblastn
+from .blast_commands import prepare_blast_db, run_tblastn

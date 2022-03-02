@@ -2,63 +2,12 @@ from .blast_result import BlastResult
 import pandas as pd
 import tempfile
 import os
-import subprocess
-from os.path import dirname,basename
 
 
-      
-def prepare_blast_db( fasta_path ):
+def annotate_blast_result( blast_result, gff3_path ):
     """
-    run makeblastdb so that the given fasta file can be used
-    with the tblastn argument "-db"
+    Add annotations to a blast result 
     """
-    
-    fasta_dir = dirname(fasta_path)
-    fasta_name = basename(fasta_path)
-    
-    command = [
-        "makeblastdb",
-        "-in", fasta_name,
-        "-parse_seqids",
-        "-dbtype", "nucl"
-    ]
-    
-    p = subprocess.Popen(command, cwd=fasta_dir )
-    p.wait()
-    
-    
-    
-def run_tblastn( protein_sequence, fasta_path ):
-    """
-    Search for fasta DNA entries matching the given protein sequence
-    
-    
-    Arguments:
-    ----------
-    protein_sequence -- (str) one protein sequence to search for
-    fasta_filepath -- (str) the path to a dna fasta file to search in
-    
-    
-    return an instance of BlastResult
-    """
-    
-    # ensure that the fasta_path has an associate blast database
-    prepare_blast_db( fasta_path )
-    
-    # make a temprorary folder
-    folder = tempfile.mkdtemp()
-    seq_path = folder+"/seq.fa"
-    out_path = folder+"/blast_output.txt"
-    
-    # build fasta file
-    with open(seq_path, "w") as f:
-        f.writelines([">\n", protein_sequence])
-
-    # run blast
-    os.system(f"tblastn -query {seq_path} -out {out_path} -db {fasta_path}")
-
-    return read_blast_output(out_path)
-        
 
 def read_blast_output(path):
     """
@@ -128,6 +77,12 @@ def _parse_data(data_lines):
             for pi in 1,3:
                 pos = int(parts[pi])
                 result.at[entry_index,"Positions"].append(pos)
+                
+    # now the result may have >2 genomic positions for each row
+    # summarize all genomic coordinates into two values: start and stop
+    result['Start_Pos'] = [min(result.at[row,"Positions"]) for row in result.index]
+    result['Stop_Pos'] = [max(result.at[row,"Positions"]) for row in result.index]
+    result = result[["Chrom","Start_Pos","Stop_Pos","Identities%"]]
                 
     return result
                 
