@@ -4,9 +4,9 @@ class BlastResult:
     An object containing results from running TBLASTN where...
     
     - the query was one protein sequence
-    - the database is a 
+    - the database is a fasta file containing DNA sequences
     
-    Get an instance using read_blast_output()
+    Get an instance using run_tblastn() or read_blast_output()
     
     Attributes:
     -----------

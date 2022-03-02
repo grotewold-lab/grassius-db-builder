@@ -1,5 +1,38 @@
 from .blast_result import BlastResult
 import pandas as pd
+import tempfile
+import os
+
+def run_tblastn( protein_sequence, fasta_path ):
+    """
+    Search for fasta DNA entries matching the given protein sequence
+    
+    
+    Arguments:
+    ----------
+    protein_sequence -- (str) one protein sequence to search for
+    fasta_filepath -- (str) the path to a dna fasta file to search in
+    
+    
+    return an instance of BlastResult
+    """
+    
+    # make a temprorary folder
+    folder = tempfile.mkdtemp()
+    seq_path = folder+"/seq.fa"
+    out_path = folder+"/blast_output.txt"
+    
+    # build fasta file
+    with open(seq_path, "w") as f:
+        f.writelines([">\n", protein_sequence])
+
+    # run blast
+    os.system(f"tblastn -query {seq_path} -out {out_path} -db {fasta_path}")
+
+    return read_blast_output(out_path)
+        
+        
+        
 
 def read_blast_output(path):
     """
