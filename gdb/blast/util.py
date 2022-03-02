@@ -49,7 +49,7 @@ def read_blast_output(path):
     
     # return empty result if there is no data
     if data_start_index is None:
-        return BlasResult("\n".join(lines),None,None)
+        return BlastResult("\n".join(lines),None,None)
     
     # parse data
     data_lines = lines[data_start_index:data_end_index]
