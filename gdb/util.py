@@ -1,6 +1,8 @@
 # this file contains utilities that are not specific to any of the
 # submodules like "blast" or "fasta"
 
+import pandas as pd
+
 def load_gene_annotations(gff3_path):
     """
     load a subset of annotations from a gff3 file

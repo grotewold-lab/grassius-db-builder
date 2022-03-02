@@ -98,12 +98,19 @@ def _parse_data(data_lines):
     
         
 def _get_matching_gene_id( chrom, start_pos, stop_pos, df ):
-    df_sub = df[(df['chrom'] == chrom) & (df['start'] <= stop_pos) & (df['end'] >= start_pos)]
+    df = df[df['chrom'] == chrom]
+    df_sub = df[
+        ((start_pos >= df['start']) & (stop_pos <= df['end'])) |  # blast region inside gff region
+        ((df['start'] >= start_pos) & (df['end'] <= stop_pos)) |  # gff region inside blast region
+        ((df['start'] >= start_pos) & (df['end'] <= start_pos))| # regions partially overlap
+        ((df['start'] >= stop_pos) & (df['end'] <= stop_pos))     # regions partially overlap
+    ]
     if len(df_sub) > 0:
         identifiers = df_sub["identifiers"].values[0]
         assert identifiers.startswith("ID=")
         return identifiers.split(";")[0][3:]
-    return None
+        
+    return ""
             
         
     

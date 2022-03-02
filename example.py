@@ -3,7 +3,7 @@ import pandas as pd
 
 # local imports
 import gdb
-from gdb.blast import prepare_blast_db,run_tblastn,annotate_blast_result
+from gdb.blast import read_blast_output,prepare_blast_db,run_tblastn,annotate_blast_result
 from gdb.fasta import get_records_for_gene_ids
 
 
@@ -18,7 +18,7 @@ prepare_blast_db(genome_path)
 
 
 # load maize v5 gene annotations
-gff_path = im.get_input_flepath("maize_v5_gff3")
+gff_path = im.get_input_filepath("maize_v5_gff3")
 gff_data = gdb.load_gene_annotations(gff_path)
 
 
