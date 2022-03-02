@@ -27,18 +27,35 @@ filepath = im.get_input_filepath("old_grassius_names")
 v3_ids = list(pd.read_excel(filepath)["v3_id"])
 
 
+# prepare final results dataframe
+result_df = pd.DataFrame()
+
 # iterate over protein sequences related to the list of ids
 filepath = im.get_input_filepath("maize_v3_proteins")
 for r in get_records_for_gene_ids(filepath,v3_ids):
+    print(r.id)
     
     # blast each protein sequence against maize v5 genome dna
     blast_result = run_tblastn( str(r.seq), genome_path )
     
     # filter blast results
     df = blast_result.data
-    blast_result.data = df[df["Identities%"] >= 99]
+    blast_result.data = pd.DataFrame(df[df["Identities%"] >= 99])
     
     # annotate blast results
     annotate_blast_result( blast_result, gff_data )
     
-    raise Exception("test")
+    # append to final results
+    df = blast_result.data
+    for row in df:
+        new_row_index = len(result_df.index)
+        result_df.loc[new_row_index,"v3_transcript_id"] = r.id
+        result_df.loc[new_row_index,"matching_v5_chrom"] = df.loc[row,"Chrom"]
+        result_df.loc[new_row_index,"matching_v5_start_pos"] = df.loc[row,"Start Pos"]
+        result_df.loc[new_row_index,"matching_v5_stop_pos"] = df.loc[row,"Stop Pos"]
+        result_df.loc[new_row_index,"matching_v5_gene_id"] = df.loc[row,"Gene ID"]
+        result_df.loc[new_row_index,"Identities%"] = df.loc[row,"Identities%"]
+        
+        
+# save final results
+result_df.to_csv("report.csv", index=False)
