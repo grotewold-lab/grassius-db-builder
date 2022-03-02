@@ -1,6 +1,5 @@
 from .blast_result import BlastResult
 import pandas as pd
-import tempfile
 import os
 
 

@@ -4,6 +4,7 @@ from .util import read_blast_output
 import subprocess
 from os.path import dirname,basename
 import os
+import tempfile
 
 
 def prepare_blast_db( fasta_path ):
