@@ -14,7 +14,7 @@ class BlastResult:
         raw text from beginning of blast output (up to the first line starting with ">")
     data : DataFrame
         parsed data where each row is a hit
-        includes "Chrom","Positions","Identities%",... for each hit
+        includes "Chrom","Start_Pos","Stop_Pos","Identities%",... for each hit
     footer : 
         raw text from end of blast output (starting at the first line starting with "lamdba")
     """

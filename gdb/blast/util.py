@@ -4,11 +4,20 @@ import tempfile
 import os
 
 
-def annotate_blast_result( blast_result, gff3_path ):
+def annotate_blast_result( blast_result, gff3_data ):
     """
     Add annotations to a blast result 
+    
+    This will add a new column "Gene_ID" to blast_result.data 
     """
 
+    df = blast_result.data
+    
+    for row in df.index:
+        chrom,start_pos,stop_pos = df.loc[row,["Chrom","Start_Pos","Stop_Pos"]]
+        df.loc[row,"Gene ID"] = _get_matching_gene_id( chrom,start_pos,stop_pos, gff3_data )
+        
+    
 def read_blast_output(path):
     """
     Parse a file containing output from TBLASTN
@@ -86,6 +95,15 @@ def _parse_data(data_lines):
                 
     return result
                 
+    
+        
+def _get_matching_gene_id( chrom, start_pos, stop_pos, df ):
+    df_sub = df[(df['chrom'] == chrom) & (df['start'] <= stop_pos) & (df['end'] >= start_pos)]
+    if len(df_sub) > 0:
+        identifiers = df_sub["identifiers"].values[0]
+        assert identifiers.startswith("ID=")
+        return identifiers.split(";")[0][3:]
+    return None
             
         
     
