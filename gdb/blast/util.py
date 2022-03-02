@@ -2,7 +2,32 @@ from .blast_result import BlastResult
 import pandas as pd
 import tempfile
 import os
+import subprocess
+from os.path import dirname,basename
 
+
+      
+def prepare_blast_db( fasta_path ):
+    """
+    run makeblastdb so that the given fasta file can be used
+    with the tblastn argument "-db"
+    """
+    
+    fasta_dir = dirname(fasta_path)
+    fasta_name = basename(fasta_path)
+    
+    command = [
+        "makeblastdb",
+        "-in", fasta_name,
+        "-parse_seqids",
+        "-dbtype", "nucl"
+    ]
+    
+    p = subprocess.Popen(command, cwd=fasta_dir )
+    p.wait()
+    
+    
+    
 def run_tblastn( protein_sequence, fasta_path ):
     """
     Search for fasta DNA entries matching the given protein sequence
@@ -17,6 +42,9 @@ def run_tblastn( protein_sequence, fasta_path ):
     return an instance of BlastResult
     """
     
+    # ensure that the fasta_path has an associate blast database
+    prepare_blast_db( fasta_path )
+    
     # make a temprorary folder
     folder = tempfile.mkdtemp()
     seq_path = folder+"/seq.fa"
@@ -30,8 +58,6 @@ def run_tblastn( protein_sequence, fasta_path ):
     os.system(f"tblastn -query {seq_path} -out {out_path} -db {fasta_path}")
 
     return read_blast_output(out_path)
-        
-        
         
 
 def read_blast_output(path):
