@@ -41,9 +41,6 @@ def run_tblastn( protein_sequence, fasta_path ):
     return an instance of BlastResult
     """
     
-    # ensure that the fasta_path has an associate blast database
-    prepare_blast_db( fasta_path )
-    
     # make a temprorary folder
     folder = tempfile.mkdtemp()
     seq_path = folder+"/seq.fa"
