@@ -1,5 +1,20 @@
 from Bio import SeqIO
 
+def get_gene_id_from_record( record ):
+    """
+    Get a gene id from the given record
+    The record should be an object of type SeqRecord
+    """
+    try:
+        desc = record.description
+        parts = desc.split()
+        gene_part = next(p for p in parts if p.startswith("gene:"))
+        return gene_part[5:]
+    except:
+        return ""
+    
+    
+    
 def get_records_for_gene_ids( fasta_filepath, gene_ids ):
     """
     load a subset of the given fasta file
