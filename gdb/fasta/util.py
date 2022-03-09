@@ -2,7 +2,7 @@ from Bio import SeqIO
 
 def get_gene_id_from_record( record ):
     """
-    Get a gene id from the given record
+    Get a gene id from the given record, from a fasta file with gene annotations
     The record should be an object of type SeqRecord
     """
     try:
@@ -30,4 +30,15 @@ def get_records_for_gene_ids( fasta_filepath, gene_ids ):
             gene = gene_parts[0].split(":")[1]
             if gene in gene_ids:
                 yield record
+    
+    
+def get_all_gene_ids( fasta_filepath ):
+    """
+    get a set of gene IDs present in annotations in the given fasta file
+    """
+    result = set()
+    with open(fasta_filepath) as fin:
+        for r in SeqIO.parse(fin, "fasta"):
+            result.add( get_gene_id_from_record(r) )
+    return result
     

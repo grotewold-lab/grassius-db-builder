@@ -4,12 +4,38 @@ import pandas as pd
 # local imports
 import gdb
 from gdb.blast import read_blast_output,prepare_blast_db,run_tblastn,annotate_blast_result
-from gdb.fasta import get_gene_id_from_record,get_records_for_gene_ids
+from gdb.fasta import get_all_gene_ids,get_gene_id_from_record,get_records_for_gene_ids
 
 
 # download and/or check integrity of all inputs
 im = gdb.InputManager()
-im.prepare_all_inputs()
+#im.prepare_all_inputs()
+
+
+# get full sets of gene IDs in each maize version
+all_v3_ids = get_all_gene_ids( im.get_input_filepath( "maize_v3_proteins" ) )
+all_v4_ids = get_all_gene_ids( im.get_input_filepath( "maize_v4_proteins" ) )
+
+# load v5 gene ids from gff3 file
+# because the v5 fasta file does not have gene ID annotations
+all_v5_ids = set()
+with open(im.get_input_filepath("maize_v5_gff3")) as fin:
+    for line in fin:
+        if "logic_name=cshl_gene" in line:
+            start = line.index("ID=") + 3
+            end = line.index(";",start)
+            all_v5_ids.add( line[start:end] )
+
+
+raise Exception("test")
+
+
+# find v3 gene IDs are in grassius but do not have corresponding v4 or v5 IDs
+mgid_path = im.get_input_filepath("maizegdb_gene_ids")
+df = pd.read_table(mgid_path, index_col=0)
+for row in df.index:
+    alleles = df.loc[row,"alleles"].split(",")
+    
 
 
 # prepare blast database with maize v5 genome (DNA)
