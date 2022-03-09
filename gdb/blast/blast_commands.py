@@ -20,7 +20,8 @@ def prepare_blast_db( fasta_path ):
         "makeblastdb",
         "-in", fasta_name,
         "-parse_seqids",
-        "-dbtype", "nucl"
+        "-dbtype", "nucl",
+        #"-dbtype", "prot",
     ]
     
     p = subprocess.Popen(command, cwd=fasta_dir )

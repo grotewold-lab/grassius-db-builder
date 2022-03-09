@@ -4,7 +4,7 @@ import pandas as pd
 # local imports
 import gdb
 from gdb.blast import read_blast_output,prepare_blast_db,run_tblastn,annotate_blast_result
-from gdb.fasta import get_records_for_gene_ids
+from gdb.fasta import get_gene_id_from_record,get_records_for_gene_ids
 
 
 # download and/or check integrity of all inputs
@@ -49,6 +49,7 @@ for r in get_records_for_gene_ids(filepath,v3_ids):
     df = blast_result.data
     for row in df.index:
         new_row_index = len(result_df.index)
+        result_df.loc[new_row_index,"v3_gene_id"] = get_gene_id_from_record(r)
         result_df.loc[new_row_index,"v3_transcript_id"] = r.id
         result_df.loc[new_row_index,"matching_v5_chrom"] = df.loc[row,"Chrom"]
         result_df.loc[new_row_index,"matching_v5_start_pos"] = df.loc[row,"Start_Pos"]
