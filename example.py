@@ -9,7 +9,7 @@ from gdb.fasta import get_all_gene_ids,get_gene_id_from_record,get_records_for_g
 
 # download and/or check integrity of all inputs
 im = gdb.InputManager()
-#im.prepare_all_inputs()
+im.prepare_all_inputs()
 
 
 # get full sets of gene IDs in all maize versions
@@ -38,7 +38,7 @@ missing_v4_and_v5 = missing_v4.intersection(missing_v5)
 
 # blast v3 proteins that are missing v5 IDs
 result_df = run_blast_and_annotate( 
-    needle_prot_fasta  = im.get_input_filepath("maize_v3_proteins"), 
+    needle_prot_fasta  = im.get_input_filepath("maize_v3_cdna"), 
     haystack_dna_fasta = im.get_input_filepath("maize_v5_full_fasta"), 
     haystack_gff       = im.get_input_filepath("maize_v5_gff3"), 
     gene_id_subset     = missing_v5 )

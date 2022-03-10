@@ -1,4 +1,4 @@
-from .blast_commands import prepare_blast_db,run_tblastn
+from .blast_commands import prepare_blast_db,run_tblastx
 from .util import annotate_blast_result
 from ..util import load_gene_annotations
 from ..fasta import get_records_for_gene_ids,get_gene_id_from_record
@@ -36,7 +36,7 @@ def run_blast_and_annotate(
             print(r.id)
 
             # blast each protein sequence against maize v5 genome dna
-            blast_result = run_tblastn( str(r.seq), haystack_dna_fasta )
+            blast_result = run_tblastx( str(r.seq), haystack_dna_fasta )
 
             # filter blast results
             df = blast_result.data

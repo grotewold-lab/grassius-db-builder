@@ -28,14 +28,14 @@ def prepare_blast_db( fasta_path ):
     
     
     
-def run_tblastn( protein_sequence, fasta_path ):
+def run_tblastx( dna_sequence, fasta_path ):
     """
-    Search for fasta DNA entries matching the given protein sequence
+    Search for fasta DNA entries matching the given DNA sequence
     
     
     Arguments:
     ----------
-    protein_sequence -- (str) one protein sequence to search for
+    dna_sequence -- (str) one protein sequence to search for
     fasta_filepath -- (str) the path to a dna fasta file to search in
     
     
@@ -49,11 +49,11 @@ def run_tblastn( protein_sequence, fasta_path ):
     
     # build fasta file
     with open(seq_path, "w") as f:
-        f.writelines([">\n", protein_sequence])
+        f.writelines([">\n", dna_sequence])
 
     # run blast
     command = [
-        "tblastn",
+        "tblastx",
         "-query", seq_path,
         "-out", out_path,
         "-db", fasta_path
