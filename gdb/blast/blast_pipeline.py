@@ -51,10 +51,10 @@ def run_blast_and_annotate(
                 new_row_index = len(result_df.index)
                 result_df.loc[new_row_index,"v3_gene_id"] = get_gene_id_from_record(r)
                 result_df.loc[new_row_index,"v3_transcript_id"] = r.id
-                result_df.loc[new_row_index,"matching_v5_chrom"] = df.loc[row,"Chrom"]
-                result_df.loc[new_row_index,"matching_v5_start_pos"] = df.loc[row,"Start_Pos"]
-                result_df.loc[new_row_index,"matching_v5_stop_pos"] = df.loc[row,"Stop_Pos"]
-                result_df.loc[new_row_index,"matching_v5_gene_id"] = df.loc[row,"Gene ID"]
+                result_df.loc[new_row_index,"matching_chrom"] = df.loc[row,"Chrom"]
+                result_df.loc[new_row_index,"matching_start_pos"] = df.loc[row,"Start_Pos"]
+                result_df.loc[new_row_index,"matching_stop_pos"] = df.loc[row,"Stop_Pos"]
+                result_df.loc[new_row_index,"matching_gene_id"] = df.loc[row,"Gene ID"]
                 result_df.loc[new_row_index,"Identities%"] = df.loc[row,"Identities%"]
                 
         except (KeyboardInterrupt,Exception) as e:

@@ -39,10 +39,10 @@ missing_v4_and_v5 = missing_v4.intersection(missing_v5)
 # blast v3 proteins that are missing v5 IDs
 result_df = run_blast_and_annotate( 
     needle_dna_fasta   = im.get_input_filepath("maize_v3_cdna"), 
-    haystack_dna_fasta = im.get_input_filepath("maize_v5_full_fasta"), 
-    haystack_gff       = im.get_input_filepath("maize_v5_gff3"), 
-    gene_id_subset     = missing_v5 )
-result_df.to_csv("v3_missing_v5.csv", index=False)
+    haystack_dna_fasta = im.get_input_filepath("maize_v4_full_fasta"), 
+    haystack_gff       = im.get_input_filepath("maize_v4_gff3"), 
+    gene_id_subset     = missing_v4 )
+result_df.to_csv("v3_missing_v4.csv", index=False)
 
 
 # s

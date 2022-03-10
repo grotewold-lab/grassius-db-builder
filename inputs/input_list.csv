@@ -12,3 +12,5 @@ maize_v5_gff3,annotations for maize v5 genome,Zm-B73-REFERENCE-NAM-5.0_Zm00001eb
 maize_v5_full_fasta,DNA sequences of the whole maize v5 genome,Zm-B73-REFERENCE-NAM-5.0.fa,https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0.fa.gz,42892bbb260cd0da9e14707ccdc433fa
 maizegdb_gene_ids,list of traditional protein names and all related gene IDs according to maizegdb,maizegdb_gene_ids.txt,,b762189e7b4664aaaac415bad8f96b70
 all_maize_gene_ids,"list of all gene IDs for all versions of maize, categorized by version",all_maize_gene_ids.txt,,3935f794f6ab29bdb4b0e52e13f4f43f
+maize_v4_full_fasta,DNA sequences of the whole maize v4 genome,Zm-B73-REFERENCE-GRAMENE-4.0.fa,https://download.maizegdb.org/Zm-B73-REFERENCE-GRAMENE-4.0/Zm-B73-REFERENCE-GRAMENE-4.0.fa.gz,6d7be7dc9ebcb34308b598fdba089a74
+maize_v4_gff3,annotations for maize v4 genome,Zm-B73-REFERENCE-GRAMENE-4.0_Zm00001d.2.gff3,https://download.maizegdb.org/Zm-B73-REFERENCE-GRAMENE-4.0/Zm-B73-REFERENCE-GRAMENE-4.0_Zm00001d.2.gff3.gz,d9dbf9d80613dedb5f6c8c4b12839d0a
