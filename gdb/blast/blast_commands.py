@@ -28,7 +28,7 @@ def prepare_blast_db( fasta_path ):
     
     
     
-def run_tblastx( dna_sequence, fasta_path ):
+def run_blastn( dna_sequence, fasta_path ):
     """
     Search for fasta DNA entries matching the given DNA sequence
     
@@ -53,7 +53,7 @@ def run_tblastx( dna_sequence, fasta_path ):
 
     # run blast
     command = [
-        "tblastx",
+        "blastn",
         "-query", seq_path,
         "-out", out_path,
         "-db", fasta_path

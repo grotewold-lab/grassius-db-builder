@@ -9,7 +9,7 @@ from gdb.fasta import get_all_gene_ids,get_gene_id_from_record,get_records_for_g
 
 # download and/or check integrity of all inputs
 im = gdb.InputManager()
-im.prepare_all_inputs()
+#im.prepare_all_inputs()
 
 
 # get full sets of gene IDs in all maize versions
