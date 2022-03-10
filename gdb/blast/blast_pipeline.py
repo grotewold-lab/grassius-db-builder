@@ -5,7 +5,7 @@ from ..fasta import get_records_for_gene_ids,get_gene_id_from_record
 import pandas as pd
 
 def run_blast_and_annotate( 
-    needle_prot_fasta, haystack_dna_fasta, haystack_gff, gene_id_subset ):
+    needle_dna_fasta, haystack_dna_fasta, haystack_gff, gene_id_subset ):
     """
     run blast and get a dataframe with annotated results
     
@@ -13,14 +13,14 @@ def run_blast_and_annotate(
     
     Arguments:
     ----------
-    needle_prot_fasta -- (str) path to a fasta file containing protein sequences to search for
+    needle_dna_fasta -- (str) path to a fasta file containing DNA sequences to search for
     haystack_dna_fasta -- (str) path to a fasta file containing a full genome of DNA (blast database)
     haystack_gff -- (str) path to a gff3 file containing annotations corresponding with the genome
     gene_id_subset -- (list of str) subset of ids to consider from the needle_fasta
     """
     
     # prepare blast database with maize v5 genome (DNA)
-    prepare_blast_db(haystack_dna_fasta)
+    #prepare_blast_db(haystack_dna_fasta)
 
 
     # load maize v5 gene annotations
@@ -31,7 +31,7 @@ def run_blast_and_annotate(
     result_df = pd.DataFrame()
 
     # iterate over protein sequences related to the list of ids
-    for r in get_records_for_gene_ids(needle_prot_fasta,gene_id_subset):
+    for r in get_records_for_gene_ids(needle_dna_fasta,gene_id_subset):
         try:
             print(r.id)
 
