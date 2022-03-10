@@ -20,7 +20,7 @@ def run_blast_and_annotate(
     """
     
     # prepare blast database with maize v5 genome (DNA)
-    #prepare_blast_db(haystack_dna_fasta)
+    prepare_blast_db(haystack_dna_fasta)
 
 
     # load maize v5 gene annotations
