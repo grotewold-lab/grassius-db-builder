@@ -57,7 +57,7 @@ def run_blast_and_annotate(
                 result_df.loc[new_row_index,"matching_v5_gene_id"] = df.loc[row,"Gene ID"]
                 result_df.loc[new_row_index,"Identities%"] = df.loc[row,"Identities%"]
                 
-        except Exception as e:
+        except (KeyboardInterrupt,Exception) as e:
             print(e)
             return result_df
             

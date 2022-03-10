@@ -3,7 +3,6 @@
 from .util import read_blast_output
 import subprocess
 from os.path import dirname,basename
-import os
 import tempfile
 
 
@@ -53,8 +52,12 @@ def run_tblastn( protein_sequence, fasta_path ):
         f.writelines([">\n", protein_sequence])
 
     # run blast
-    command = f"tblastn -query {seq_path} -out {out_path} -db {fasta_path}"
-    #os.system(command)
+    command = [
+        "tblastn",
+        "-query", seq_path,
+        "-out", out_path,
+        "-db", fasta_path
+    ]
     p = subprocess.Popen(command)
     p.wait()
     
