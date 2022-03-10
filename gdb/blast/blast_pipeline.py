@@ -1,7 +1,11 @@
 from .blast_commands import prepare_blast_db,run_tblastn
+from .util import annotate_blast_result
+from ..util import load_gene_annotations
+from ..fasta import get_records_for_gene_ids,get_gene_id_from_record
+import pandas as pd
 
 def run_blast_and_annotate( 
-    needle_prot_fasta, haystack_dna_fasta, haystack_gff, gene_id_subset=None ):
+    needle_prot_fasta, haystack_dna_fasta, haystack_gff, gene_id_subset ):
     """
     run blast and get a dataframe with annotated results
     
@@ -9,10 +13,10 @@ def run_blast_and_annotate(
     
     Arguments:
     ----------
-    needle_prot_fasta -- (str) path to a fasta file containing sequences to search for
-    haystack_dna_fasta -- (str) path to a fasta file containing a full genome (blast database)
+    needle_prot_fasta -- (str) path to a fasta file containing protein sequences to search for
+    haystack_dna_fasta -- (str) path to a fasta file containing a full genome of DNA (blast database)
     haystack_gff -- (str) path to a gff3 file containing annotations corresponding with the genome
-    gene_id_subset -- (optional) (list of str) subset of ids to consider from the needle_fasta
+    gene_id_subset -- (list of str) subset of ids to consider from the needle_fasta
     """
     
     # prepare blast database with maize v5 genome (DNA)
@@ -20,14 +24,14 @@ def run_blast_and_annotate(
 
 
     # load maize v5 gene annotations
-    gff_data = gdb.load_gene_annotations(haystack_gff)
+    gff_data = load_gene_annotations(haystack_gff)
 
 
     # prepare final results dataframe
     result_df = pd.DataFrame()
 
     # iterate over protein sequences related to the list of ids
-    for r in get_records_for_gene_ids(needle_prot_fasta,v3_ids):
+    for r in get_records_for_gene_ids(needle_prot_fasta,gene_id_subset):
         try:
             print(r.id)
 
@@ -36,7 +40,7 @@ def run_blast_and_annotate(
 
             # filter blast results
             df = blast_result.data
-            blast_result.data = pd.DataFrame(df[df["Identities%"] >= 99])
+            blast_result.data = pd.DataFrame(df[df["Identities%"] >= 90])
 
             # annotate blast results
             annotate_blast_result( blast_result, gff_data )

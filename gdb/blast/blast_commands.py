@@ -53,6 +53,9 @@ def run_tblastn( protein_sequence, fasta_path ):
         f.writelines([">\n", protein_sequence])
 
     # run blast
-    os.system(f"tblastn -query {seq_path} -out {out_path} -db {fasta_path}")
-
+    command = f"tblastn -query {seq_path} -out {out_path} -db {fasta_path}"
+    #os.system(command)
+    p = subprocess.Popen(command)
+    p.wait()
+    
     return read_blast_output(out_path)
