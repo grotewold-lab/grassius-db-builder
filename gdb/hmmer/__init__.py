@@ -1,4 +1,5 @@
 from .hmmscan_result import HmmscanResult
 from .hmmer_commands import run_hmmscan
 from .score_thresholds import get_filtered_hmmscan_result
-from .util import read_family_criteria,get_relevant_accessions,build_minified_hmm,read_hmmscan_output
+from .util import get_relevant_accessions,build_minified_hmm,read_hmmscan_output
+from .family_criteria import read_family_criteria,find_matching_transcripts

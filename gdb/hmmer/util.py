@@ -8,26 +8,25 @@ def get_acc_dict(hmmscan_result):
     """
     Summarize hmmscan results in the form of a dictionary
     
-    Results should be filtereed before using this function
-    The resulting object will not contain scores.
+    Results should be filtered before using this function,
+    because the resulting object will not contain scores.
+    
+    Return a dictionary where keys are transcript IDs, 
+    and values are lists of matching accession names
+    
+    Arguments:
+    ----------
+    hmmscan_result -- an instance of HmmscanResult
     """
     
-    
-
-def read_family_criteria(path):
-    """
-    Load an excel sheet containing rules for assigning families to protein sequences
-    
-    The following columns will be considered in an automated pipeline:
-        "GRASSIUS" - the family name
-        "Required" - accessions that must be present (one or more accessions)
-        "Forbidden" - accessions that must NOT be present (zero or more accessions)
-    
-    Formatting of "Required" and "Forbidden" columns is based on iTAK
-    
-    return a dataframe
-    """
-    return pd.read_excel(path).fillna('').iloc[:,:12]
+    result = {}
+    for row in hmm_df.index:        
+        tid,acc = hmm_df.loc[row,"query name"]
+        acc = hmm_df.loc[row,"accession"].split(".")[0]
+        if tid not in result.keys():
+            result[tid] = []
+        result[tid].append( acc )
+    return result
 
     
 def get_relevant_accessions(family_criteria):
