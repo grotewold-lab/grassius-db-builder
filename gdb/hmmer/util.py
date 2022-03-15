@@ -4,6 +4,16 @@ from .hmmscan_result import HmmscanResult
 import pandas as pd
 
 
+def get_acc_dict(hmmscan_result):
+    """
+    Summarize hmmscan results in the form of a dictionary
+    
+    Results should be filtereed before using this function
+    The resulting object will not contain scores.
+    """
+    
+    
+
 def read_family_criteria(path):
     """
     Load an excel sheet containing rules for assigning families to protein sequences
@@ -105,8 +115,9 @@ def read_hmmscan_output(path):
     
     # prepare dataframe to contain data
     colnames = [
-        "target name","accession","query name","accession",
-        "E-value","score","bias","E-value","score","bias",
+        "target name","accession","query name","_accession",
+        "fs_E-value","fs_score","fs_bias",
+        "best_E-value","best_score","best_bias",
         "exp","reg","clu","ov","env","dom","rep","inc"
     ]
     ncols = len(colnames)
@@ -136,5 +147,11 @@ def read_hmmscan_output(path):
                 break
             footer += line
                 
+    # remove suffixes from accession names
+    df["accession"] = [s.split(".")[0] for s in df["accession"]]
+                
+    # convert some columns to numeric
+    for col in colnames[4:]:
+        df[col] = pd.to_numeric( df[col], errors="coerce" )
     
     return HmmscanResult(df, footer)
