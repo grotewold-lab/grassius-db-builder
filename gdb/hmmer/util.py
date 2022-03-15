@@ -3,6 +3,42 @@
 from .hmmscan_result import HmmscanResult
 import pandas as pd
 
+
+def read_family_criteria(path):
+    """
+    Load an excel sheet containing rules for assigning families to protein sequences
+    
+    The following columns will be considered in an automated pipeline:
+        "GRASSIUS" - the family name
+        "Required" - accessions that must be present (one or more accessions)
+        "Forbidden" - accessions that must NOT be present (zero or more accessions)
+    
+    Formatting of "Required" and "Forbidden" columns is based on iTAK
+    
+    return a dataframe
+    """
+    return pd.read_excel(path).fillna('').iloc[:,:12]
+
+    
+def get_relevant_accessions(family_criteria):
+    """
+    Get the minimum set of accessions that should be considered 
+    in order to assign families to protein sequences
+    
+    Arguments:
+    ----------
+    family_criteria -- (DataFrame) criteria returned by read_family_criteria
+    """
+    
+    df = family_criteria
+    all_acc = set()
+    for row in df.index:
+        for col in ["Required","Forbidden"]:
+            all_acc.update( [s[:-2] for s in df.loc[row,col].split(":")] )
+    all_acc.discard('')
+    
+    return all_acc
+
 def build_minified_hmm( hmm_path, domain_subset, output_path ):
     """
     Create a new hmm file containing only the necessary domains,

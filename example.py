@@ -4,17 +4,22 @@ import pandas as pd
 # local imports
 import gdb
 from gdb.blast import run_blast_and_annotate
-from gdb.fasta import get_all_gene_ids,get_gene_id_from_record,get_records_for_gene_ids
-from gdb.hmmer import run_hmmscan, read_hmmscan_output
+from gdb.fasta import get_all_gene_ids, get_gene_id_from_record, get_records_for_gene_ids
+from gdb.hmmer import read_family_criteria, get_relevant_accessions, run_hmmscan, read_hmmscan_output
 
 # download and/or check integrity of all inputs
 im = gdb.InputManager()
 #im.prepare_all_inputs()
 
+# DEBUG test loading family criteria
+filepath = im.get_input_filepath("family_rules")
+family_criteria = read_family_criteria(filepath)
+accessions = get_relevant_accessions(family_criteria)
+raise Exception("test")
+
 # DEBUG test parsing hmmscan output
 filepath = im.get_input_filepath("hmmer_output_example")
 test = read_hmmscan_output( filepath )
-
 raise Exception("test")
 
 

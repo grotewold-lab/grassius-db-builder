@@ -1,3 +1,3 @@
 from .hmmscan_result import HmmscanResult
 from .hmmer_commands import run_hmmscan
-from .util import build_minified_hmm,read_hmmscan_output
+from .util import read_family_criteria,get_relevant_accessions,build_minified_hmm,read_hmmscan_output
