@@ -1,5 +1,8 @@
 # this file contains utility functions to support hmmer
 
+from .hmmscan_result import HmmscanResult
+import pandas as pd
+
 def build_minified_hmm( hmm_path, domain_subset, output_path ):
     """
     Create a new hmm file containing only the necessary domains,
@@ -23,4 +26,38 @@ def read_hmmscan_output(path):
     return an instance of HmmscanResult
     """
     
-    return HmmscanResult()
+    # prepare dataframe to contain data
+    colnames = [
+        "target name","accession","query name","accession",
+        "E-value","score","bias","E-value","score","bias",
+        "exp","reg","clu","ov","env","dom","rep","inc"
+    ]
+    ncols = len(colnames)
+    df = pd.DataFrame(columns=colnames)
+    
+    # start reading the output file
+    with open(path) as fin:
+        
+        # skip 3 lines
+        [fin.readline() for i in range(3)]
+        
+        # parse data
+        i = 0
+        while True:
+            line = fin.readline()
+            if line.startswith("#"):
+                break
+                
+            df.loc[i,:] = line.split()[:ncols]
+            i += 1
+    
+        # extract footer
+        footer = ""
+        while True:
+            line = fin.readline()
+            if not line:
+                break
+            footer += line
+                
+    
+    return HmmscanResult(df, footer)
