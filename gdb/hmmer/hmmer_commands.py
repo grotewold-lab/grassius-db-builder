@@ -3,6 +3,7 @@
 from .util import read_hmmscan_output
 import subprocess
 import tempfile
+import shutil
 
 def run_hmmscan( hmm_path, fasta_path ):
     """
@@ -32,4 +33,7 @@ def run_hmmscan( hmm_path, fasta_path ):
     p = subprocess.Popen(command)
     p.wait()
     
-    return read_hmmscan_output(out_path)
+    result = read_hmmscan_output(out_path)
+    shutil.rmtree(folder)
+    
+    return result
