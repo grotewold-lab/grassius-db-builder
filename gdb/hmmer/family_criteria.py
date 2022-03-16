@@ -19,17 +19,17 @@ def read_family_criteria(path):
 
 
     
-def get_relevant_accessions(family_criteria):
+def get_relevant_accessions(family_criteria_df):
     """
     Get the minimum set of accessions that should be considered 
     in order to assign families to protein sequences
     
     Arguments:
     ----------
-    family_criteria -- (DataFrame) criteria returned by read_family_criteria
+    family_criteria_df -- (DataFrame) criteria returned by read_family_criteria
     """
     
-    df = family_criteria
+    df = family_criteria_df
     all_acc = set()
     for row in df.index:
         for col in ["Required","Forbidden"]:
@@ -39,28 +39,61 @@ def get_relevant_accessions(family_criteria):
     return all_acc
 
 
+def categorize_all_genes( acc_dict, family_criteria_df, transcript_gene_dict ):
+    """
+    categorize genes into families
+    
+    return a dictionary where 
+        keys are family names
+        values are lists of gene IDs
+        
+    Arguments:
+    ----------
+    acc_dict -- (dict) summary of hmmscan results returned by get_acc_dict
+                keys are transcript IDs
+                values are lists of matching accession names
+                
+    family_criteria_df -- (Dataframe) criteria returned by read_family_criteria
+    
+    transcript_gene_dict -- a dictionary where keys are transcript IDs, and values are gene IDs
+                            output from gdb.fasta.get_transcript_gene_dict
+    """
+    
+    tids_by_family = categorize_all_transcripts( acc_dict, family_criteria_df )
+    
+    result = {}
+    for family,tids in tids_by_family.items():
+        result[family] = [transcript_gene_dict[t] for t in tids]
+        
+    return result
+    
+   
+    
 
-def categorize_all_transcripts( acc_dict, family_criteria ):
+
+def categorize_all_transcripts( acc_dict, family_criteria_df ):
     """
     categorize transcripts into families
     
     return a dictionary where 
         keys are family names
-        values are lists of matching transcript IDs
+        values are lists of transcript IDs
     
     Arguments:
     ----------
     acc_dict -- (dict) summary of hmmscan results returned by get_acc_dict
                 keys are transcript IDs
                 values are lists of matching accession names
-    family_criteria -- (Dataframe) criteria returned by read_family_criteria
+    family_criteria_df -- (Dataframe) criteria returned by read_family_criteria
     
     """
+    df = family_criteria_df
+    
     tids_by_family = {}
-    for row in crit_df.index:
-        required_accs = crit_df.loc[row,"Required"].split(":")
-        forbidden_accs = crit_df.loc[row,"Forbidden"].split(":")
-        family_name = crit_df.loc[row,"GRASSIUS"]    
+    for row in df.index:
+        required_accs = df.loc[row,"Required"].split(":")
+        forbidden_accs = df.loc[row,"Forbidden"].split(":")
+        family_name = df.loc[row,"GRASSIUS"]    
         family_tids = find_matching_transcripts( acc_dict, required_accs, forbidden_accs )
         tids_by_family[family_name] = family_tids
         

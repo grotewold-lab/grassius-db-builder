@@ -20,10 +20,11 @@ def get_acc_dict(hmmscan_result):
     hmmscan_result -- an instance of HmmscanResult
     """
     
+    df = hmmscan_result.data
     result = {}
-    for row in hmm_df.index:        
-        tid,acc = hmm_df.loc[row,"query name"]
-        acc = hmm_df.loc[row,"accession"].split(".")[0]
+    for row in df.index:        
+        tid,acc = df.loc[row,["query name","accession"]]
+        acc = df.loc[row,"accession"].split(".")[0]
         if tid not in result.keys():
             result[tid] = []
         result[tid].append( acc )
