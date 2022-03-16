@@ -44,6 +44,18 @@ class InputManager:
         return list(self.df["name"])
     
     
+    def __getitem__( self, name ):
+        """
+        shorthand for using get_input_filepath()
+        this overloads the square bracket operator
+        
+        example:
+        im = InputManager()
+        im["chado_template"] == im.get_input_filepath("chado_template")
+        """
+        return self.get_input_filepath(name)
+    
+    
     def get_input_filepath(self, name):
         """
         download and extract the file if necessary
