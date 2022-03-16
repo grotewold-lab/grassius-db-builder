@@ -5,6 +5,16 @@ import subprocess
 import tempfile
 import shutil
 
+def run_hmmpress( hmm_path ):
+    """
+    prepare the given hmm file for use with hmmscan
+    """
+    
+    command = [ "hmmpress", hmm_path ]
+    p = subprocess.Popen(command)
+    p.wait()
+    
+
 def run_hmmscan( hmm_path, fasta_path ):
     """
     identify domains in protein sequences

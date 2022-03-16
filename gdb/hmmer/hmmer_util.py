@@ -1,7 +1,9 @@
 # this file contains utility functions to support hmmer
 
+# local imports
 from .hmmscan_result import HmmscanResult
 
+import pandas as pd
 
 def get_acc_dict(hmmscan_result):
     """
@@ -89,10 +91,12 @@ def build_minified_hmm( hmm_path, domain_subset, output_path ):
 
             input_line_index = 0
             save_section = True
+            
             while True:
                 line = fin.readline()
 
                 # reached accession label
+                # we may decide to give up on saving the current section
                 if line.startswith("ACC"):
                     acc = line.strip().split()[1].split(".")[0]
                     if acc not in domain_subset:
@@ -102,13 +106,12 @@ def build_minified_hmm( hmm_path, domain_subset, output_path ):
                 # reached end of input section
                 if line.startswith("//"):
 
-                    # debug
-                    #print( f"section break at line {input_line_index}" )
-                    #if save_section:
-                    #    print( f"saving last section (accession {acc}) to minified output" )
-
+                    # save the section that just ended, if necessary
                     if save_section:
                         fout.writelines(buffer)
+                        fout.write("//\n")
+                            
+                    # clear the buffer and assume the next section will be save-able
                     buffer = []
                     save_section = True
 
@@ -116,7 +119,7 @@ def build_minified_hmm( hmm_path, domain_subset, output_path ):
                 if not line:
                     break
 
-                if save_section:
+                if save_section and (not line.startswith("//")):
                     buffer.append( line )
 
                 input_line_index += 1

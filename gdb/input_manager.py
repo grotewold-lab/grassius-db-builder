@@ -102,7 +102,8 @@ class InputManager:
                 file_hash.update(chunk)
             if file_hash.hexdigest() != md5sum:
                 raise Exception(f'integrity check failed for input "{name}"\n\tlocal path: {filepath}')
-       
+        print( 'Integrity is good!' )
+        
         return filepath
         
         
