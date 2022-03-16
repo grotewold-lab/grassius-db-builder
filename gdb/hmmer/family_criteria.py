@@ -1,5 +1,6 @@
 # this file contains functions related to the criteria for assigning families to transcripts
 
+import pandas as pd
 
 def read_family_criteria(path):
     """
@@ -15,6 +16,27 @@ def read_family_criteria(path):
     return a dataframe
     """
     return pd.read_excel(path).fillna('').iloc[:,:12]
+
+
+    
+def get_relevant_accessions(family_criteria):
+    """
+    Get the minimum set of accessions that should be considered 
+    in order to assign families to protein sequences
+    
+    Arguments:
+    ----------
+    family_criteria -- (DataFrame) criteria returned by read_family_criteria
+    """
+    
+    df = family_criteria
+    all_acc = set()
+    for row in df.index:
+        for col in ["Required","Forbidden"]:
+            all_acc.update( [s[:-2] for s in df.loc[row,col].split(":")] )
+    all_acc.discard('')
+    
+    return all_acc
 
 
 def find_matching_transcripts( acc_dict, required_accs, forbidden_accs ):

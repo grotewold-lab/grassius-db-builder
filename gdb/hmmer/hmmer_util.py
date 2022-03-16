@@ -1,7 +1,6 @@
 # this file contains utility functions to support hmmer
 
 from .hmmscan_result import HmmscanResult
-import pandas as pd
 
 
 def get_acc_dict(hmmscan_result):
@@ -28,25 +27,45 @@ def get_acc_dict(hmmscan_result):
         result[tid].append( acc )
     return result
 
-    
-def get_relevant_accessions(family_criteria):
+
+def concatenate_hmms( hmm_paths, output_path ):
     """
-    Get the minimum set of accessions that should be considered 
-    in order to assign families to protein sequences
+    Create a new hmm file containing the contents of two existing hmm files
+    
     
     Arguments:
     ----------
-    family_criteria -- (DataFrame) criteria returned by read_family_criteria
+    hmm_paths -- (list of str) paths to existing hmm files
+    output_path -- (str) the path for the resulting file which will be created or replaced
     """
     
-    df = family_criteria
-    all_acc = set()
-    for row in df.index:
-        for col in ["Required","Forbidden"]:
-            all_acc.update( [s[:-2] for s in df.loc[row,col].split(":")] )
-    all_acc.discard('')
+    with open(output_path,"w") as fout:
+        for input_path in hmm_paths:
+            with open(input_path) as fin:
+                while True:
+                    line = fin.readline()
+                    if not line:
+                        break
+                    fout.write(line)
+                
     
-    return all_acc
+
+def get_accessions( hmm_path ):
+    """
+    Get a list of accession names present in the given hmm file
+    """
+    result = []
+    
+    with open(hmm_path) as fin:
+        while True:
+            line = fin.readline()
+            if not line:
+                break
+            if line.startswith("ACC"):
+                acc = line.strip().split()[1].split(".")[0]
+                result.append(acc)
+
+    return result
 
 
 def build_minified_hmm( hmm_path, domain_subset, output_path ):
