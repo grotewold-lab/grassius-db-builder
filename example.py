@@ -4,12 +4,36 @@ import pandas as pd
 # local imports
 import gdb
 from gdb.blast import run_blast_and_annotate
-from gdb.fasta import get_all_gene_ids,get_gene_id_from_record,get_records_for_gene_ids
+from gdb.fasta import *
+from gdb.hmmer import *
+
 
 
 # download and/or check integrity of all inputs
 im = gdb.InputManager()
 #im.prepare_all_inputs()
+
+
+
+# DEBUG test loading family criteria
+family_criteria = read_family_criteria(im["family_rules"])
+desired_accessions = get_relevant_accessions(family_criteria)
+
+# DEBUG test building combined,minified hmm file
+build_minified_hmm( im["pfam_hmm"], desired_accessions, "pfam_min.hmm" )
+concatenate_hmms( ["pfam_min.hmm",im["selfbuild_hmm"]], "combined.hmm" )
+accessions = get_accessions( "combined.hmm" )
+missing_accesions = set(desired_accessions) - set(accessions)
+raise Exception("test")
+
+
+# DEBUG test parsing hmmscan output
+#hmmscan_result = read_hmmscan_output( im["hmmer_output_example"] )
+
+# DEBUG test filtering hmmscan output
+#filtered_hmmscan_result = get_filtered_hmmscan_result( hmmscan_result )
+#raise Exception("test")
+
 
 
 # get full sets of gene IDs in all maize versions

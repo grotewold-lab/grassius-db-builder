@@ -4,6 +4,7 @@ family_rules,criteria for assigning families to transcripts,Current_TF_family_ru
 selfbuild_hmm,selfbuild HM models,TF_selfbuild.hmm,,70f2ecffeae2bd4a514a82c5ad9251d1
 pfam_hmm,pfam HM models,Pfam-A.hmm,http://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam35.0/Pfam-A.hmm.gz,eb895a2152c0e977cb6cf1fee27e3003
 maize_v3_cdna,Fasta file with maize v3 cdna sequences,Zea_mays.AGPv3.22.cdna.all.fa,https://download.maizegdb.org/B73_RefGen_v3/Zea_mays.AGPv3.22.cdna.all.fa.gz,45d70498e9b0327d387044515f450583
+maize_v3_proteins,Fasta file with maize v3 protein sequences,Zea_mays.AGPv3.22.pep.all.fa,https://download.maizegdb.org/B73_RefGen_v3/Zea_mays.AGPv3.22.pep.all.fa.gz,2c93f694dba66d8ac83c92e9b438f889
 maize_v4_proteins,Fasta file with maize v4 protein sequences,Zm-B73-REFERENCE-GRAMENE-4.0_Zm00001d.2.protein.fa,http://ftp.maizegdb.org/MaizeGDB/FTP/Zm-B73-REFERENCE-GRAMENE-4.0/Zm-B73-REFERENCE-GRAMENE-4.0_Zm00001d.2.protein.fa.gz,881e852a5d7e7d3723ff2ba6d6a278e1
 maize_v5_proteins,Fasta file with maize v5 protein sequences,Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.protein.fa,http://ftp.maizegdb.org/MaizeGDB/FTP/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.protein.fa.gz,5056fa19e0c1cef1a136dd7b69d1b9a6
 blast_output_example,example output from command “tblastn ...”,blast_output_example.txt,,fb886f2348d34a118a1bd4c19a617e6b
@@ -14,3 +15,4 @@ maizegdb_gene_ids,list of traditional protein names and all related gene IDs acc
 all_maize_gene_ids,"list of all gene IDs for all versions of maize, categorized by version",all_maize_gene_ids.txt,,3935f794f6ab29bdb4b0e52e13f4f43f
 maize_v4_full_fasta,DNA sequences of the whole maize v4 genome,Zm-B73-REFERENCE-GRAMENE-4.0.fa,https://download.maizegdb.org/Zm-B73-REFERENCE-GRAMENE-4.0/Zm-B73-REFERENCE-GRAMENE-4.0.fa.gz,6d7be7dc9ebcb34308b598fdba089a74
 maize_v4_gff3,annotations for maize v4 genome,Zm-B73-REFERENCE-GRAMENE-4.0_Zm00001d.2.gff3,https://download.maizegdb.org/Zm-B73-REFERENCE-GRAMENE-4.0/Zm-B73-REFERENCE-GRAMENE-4.0_Zm00001d.2.gff3.gz,d9dbf9d80613dedb5f6c8c4b12839d0a
+hmmer_output_example,example output from command “hmmscan”,pfam_min_v3.txt,,0d57dc63cc0d2b846e2ead2bbb17aad5

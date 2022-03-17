@@ -4,6 +4,7 @@ from .util import read_blast_output
 import subprocess
 from os.path import dirname,basename
 import tempfile
+import shutil
 
 
 def prepare_blast_db( fasta_path ):
@@ -61,4 +62,8 @@ def run_blastn( dna_sequence, fasta_path ):
     p = subprocess.Popen(command)
     p.wait()
     
-    return read_blast_output(out_path)
+    result = read_blast_output(out_path)
+
+    shutil.rmtree(folder)
+    
+    return result
