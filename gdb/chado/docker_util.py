@@ -56,10 +56,14 @@ def init_template_db_container( replace=False, port=None ):
     if not image_exists():
         init_template_db_image()
         
+    # sudo docker run -d -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 8642:5432 -it gdb-chado-image
+        
     # start new container and keep it running
     return client.containers.run(image_name,
                                  name=container_name, 
-                                 ports={'5432/tcp':8642},
+                                 ports={'5432/tcp':port},
+                                 environment={"POSTGRES_USER":"postgres",
+                                              "POSTGRES_PASSWORD":"postgres"},
                                  detach=True, 
                                  tty=True)
 
@@ -84,6 +88,8 @@ def init_template_db_image():
     This should only be used in init_template_db_container
     """
     
+    print( f'building docker image "{image_name}"...' )
+    
     # make a temporary folder to contain docker build context
     folder = tempfile.mkdtemp()
     dockerfile = folder + "/Dockerfile"
@@ -96,10 +102,13 @@ def init_template_db_image():
     with open(dockerfile,"w") as fout:
         fout.write("FROM postgres:9\n")
         fout.write("COPY init.sql /docker-entrypoint-initdb.d/\n")
+        
+        # workaround error when running image
+        fout.write("RUN sed -i 's/CREATE INDEX bingroup_boxrange/--/g' /docker-entrypoint-initdb.d/init.sql\n")
+        fout.write("RUN sed -i 's/CREATE INDEX binloc_boxrange/--/g' /docker-entrypoint-initdb.d/init.sql\n")
     
     # build image
     docker.from_env().images.build( path=folder, tag=image_name )
     
-    #debug
-    print( folder )
-    #shutil.rmtree(folder)
+    # delete temporary folder
+    shutil.rmtree(folder)
