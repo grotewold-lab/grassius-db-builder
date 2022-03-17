@@ -1,1 +1,1 @@
-from .docker_util import get_existing_container,init_template_db
+from .docker_util import get_existing_template_db_container,init_template_db_container
