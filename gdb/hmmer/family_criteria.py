@@ -63,7 +63,7 @@ def categorize_all_genes( acc_dict, family_criteria_df, transcript_gene_dict ):
     
     result = {}
     for family,tids in tids_by_family.items():
-        result[family] = [transcript_gene_dict[t] for t in tids]
+        result[family] = set([transcript_gene_dict[t] for t in tids])
         
     return result
     
@@ -95,7 +95,10 @@ def categorize_all_transcripts( acc_dict, family_criteria_df ):
         forbidden_accs = df.loc[row,"Forbidden"].split(":")
         family_name = df.loc[row,"GRASSIUS"]    
         family_tids = find_matching_transcripts( acc_dict, required_accs, forbidden_accs )
-        tids_by_family[family_name] = family_tids
+        
+        if family_name not in tids_by_family.keys():
+            tids_by_family[family_name] = []
+        tids_by_family[family_name] += family_tids
         
     return tids_by_family
 

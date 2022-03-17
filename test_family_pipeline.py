@@ -28,8 +28,9 @@ im = gdb.InputManager()
 # load family criteria
 family_criteria_df = read_family_criteria(im["family_rules"])
 
-# load gene -> transcripts dictionary
+# load gene -> transcripts dictionary (in two different forms for convenience)
 transcript_gene_dict = get_transcript_gene_dict(im["maize_v3_proteins"])
+gene_transcript_dict = get_gene_transcript_dict(im["maize_v3_proteins"])
 
 # load old grassius family -> gene dictionary
 df = pd.read_excel( im["old_grassius_names"] )
@@ -74,22 +75,48 @@ else:
     hmmscan_result = run_hmmscan( combined_hmm_path, im["maize_v3_proteins"] )
 
 
+df = hmmscan_result.data
+
+# check if a false-negative gene id is un-fixable using score thresholds
+def is_problematic( gid, forbidden ):
+    for tid in gene_transcript_dict[gid]:
+        accs = df.loc[df["query name"] == tid,"accession"].values
+        for acc in accs:
+            if acc in forbidden:
+                # not problematic because a stricter threshold might fix the issue
+                return False 
+    return True
+    
+    
 # assign family names using UNFILTERED hmmscan results
 # check for false negatives
-# which CANNOT be fixed using score thresholds
+# which CANNOT be fixed using score tdhresholds
 acc_dict = get_acc_dict( hmmscan_result )
 families = categorize_all_genes( acc_dict, family_criteria_df, transcript_gene_dict )
 
 for family_name in families.keys():
     if family_name not in old_grassius_families.keys():
         continue
-    fn_genes = set(old_grassius_families[family_name]) - set(families[family_name]) 
+    required = family_criteria_df.loc[family_criteria_df["GRASSIUS"] == family_name,"Required"].values[0]
+    forbidden = family_criteria_df.loc[family_criteria_df["GRASSIUS"] == family_name,"Forbidden"].values[0]
+    fn_genes = set(old_grassius_families[family_name]) - set(families[family_name])
+    fn_genes = [g for g in fn_genes if g in gene_transcript_dict.keys()]
+    fn_genes = [g for g in fn_genes if is_problematic(g, forbidden)]
+    
     if len(fn_genes) > 0:
-        print( f"false-negatives for {family_name} family:\n\t{fn_genes}" )
+        
+        print( f"\nrequired for {family_name} family: {required}" )
+        print( f"forbidden for {family_name} family: {forbidden}" )
+        print( f"problematic false-negatives for {family_name} family:" )
+        for gid in fn_genes:
+            print( f"\t{gid}" )
+            for tid in gene_transcript_dict[gid]:
+                accs = df.loc[df["query name"] == tid,"accession"].values
+                print( f"\t\t{tid} has accessions: {accs}" )
 
+                
 
-
-
+raise Exception("test")
 
 
 # assign family names using FILTERED hmmscan results
