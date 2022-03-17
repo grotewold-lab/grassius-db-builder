@@ -35,7 +35,7 @@ def run_hmmscan( hmm_path, fasta_path ):
      
     command = [
         "hmmscan",
-        "--tblout", out_path,
+        "--domtblout", out_path,
         hmm_path,
         fasta_path
     ]

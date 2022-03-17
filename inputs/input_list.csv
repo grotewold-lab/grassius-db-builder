@@ -15,4 +15,4 @@ maizegdb_gene_ids,list of traditional protein names and all related gene IDs acc
 all_maize_gene_ids,"list of all gene IDs for all versions of maize, categorized by version",all_maize_gene_ids.txt,,3935f794f6ab29bdb4b0e52e13f4f43f
 maize_v4_full_fasta,DNA sequences of the whole maize v4 genome,Zm-B73-REFERENCE-GRAMENE-4.0.fa,https://download.maizegdb.org/Zm-B73-REFERENCE-GRAMENE-4.0/Zm-B73-REFERENCE-GRAMENE-4.0.fa.gz,6d7be7dc9ebcb34308b598fdba089a74
 maize_v4_gff3,annotations for maize v4 genome,Zm-B73-REFERENCE-GRAMENE-4.0_Zm00001d.2.gff3,https://download.maizegdb.org/Zm-B73-REFERENCE-GRAMENE-4.0/Zm-B73-REFERENCE-GRAMENE-4.0_Zm00001d.2.gff3.gz,d9dbf9d80613dedb5f6c8c4b12839d0a
-hmmer_output_example,example output from command “hmmscan”,pfam_min_v3.txt,,0d57dc63cc0d2b846e2ead2bbb17aad5
+hmmer_output_example,example output from command “hmmscan”,hmmscan_output_example.txt,,3198dea85c64a3ec60bf31585f3ddb21

@@ -137,10 +137,13 @@ def read_hmmscan_output(path):
     
     # prepare dataframe to contain data
     colnames = [
-        "target name","accession","query name","_accession",
-        "fs_E-value","fs_score","fs_bias",
-        "best_E-value","best_score","best_bias",
-        "exp","reg","clu","ov","env","dom","rep","inc"
+        "target name","accession","tlen","query name","_accession","qlen",
+        "E-value","fs_score","fs_bias", # full sequence
+        "#","of","c-Evalue","i-Evalue","td_score","td_bias", # this domain
+        "hmm_from","hmm_to", # hmm coord
+        "ali_from","ali_to", # ali coord
+        "env_from","env_to", # env coord
+        "acc"
     ]
     ncols = len(colnames)
     df = pd.DataFrame(columns=colnames)

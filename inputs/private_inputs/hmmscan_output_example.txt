@@ -1,0 +1,15 @@
+#                                                                            --- full sequence --- -------------- this domain -------------   hmm coord   ali coord   env coord
+# target name        accession   tlen query name           accession   qlen   E-value  score  bias   #  of  c-Evalue  i-Evalue  score  bias  from    to  from    to  from    to  acc description of target
+#------------------- ---------- ----- -------------------- ---------- ----- --------- ------ ----- --- --- --------- --------- ------ ----- ----- ----- ----- ----- ----- ----- ---- ---------------------
+Myb_DNA-binding      PF00249.34    46 GRMZM2G005066        -            272   1.5e-31  101.3   1.7   1   2   2.8e-19   3.2e-17   55.4   0.5     1    46    14    61    14    61 0.99 Myb-like DNA-binding domain
+Myb_DNA-binding      PF00249.34    46 GRMZM2G005066        -            272   1.5e-31  101.3   1.7   2   2   4.8e-16   5.5e-14   45.1   0.0     7    45    74   112    73   113 0.96 Myb-like DNA-binding domain
+#
+# Program:         hmmscan
+# Version:         3.1b2 (February 2015)
+# Pipeline mode:   SCAN
+# Query file:      test.fa
+# Target file:     combined.hmm
+# Option settings: hmmscan --domtblout out.txt combined.hmm test.fa 
+# Current dir:     /home/tessmero/Documents/March17-meeting/test
+# Date:            Thu Mar 17 12:22:50 2022
+# [ok]

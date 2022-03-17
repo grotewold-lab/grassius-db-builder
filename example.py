@@ -16,19 +16,20 @@ im = gdb.InputManager()
 
 
 # DEBUG test loading family criteria
-family_criteria = read_family_criteria(im["family_rules"])
-desired_accessions = get_relevant_accessions(family_criteria)
+#family_criteria = read_family_criteria(im["family_rules"])
+#desired_accessions = get_relevant_accessions(family_criteria)
 
 # DEBUG test building combined,minified hmm file
-build_minified_hmm( im["pfam_hmm"], desired_accessions, "pfam_min.hmm" )
-concatenate_hmms( ["pfam_min.hmm",im["selfbuild_hmm"]], "combined.hmm" )
-accessions = get_accessions( "combined.hmm" )
-missing_accesions = set(desired_accessions) - set(accessions)
-raise Exception("test")
+#build_minified_hmm( im["pfam_hmm"], desired_accessions, "pfam_min.hmm" )
+#concatenate_hmms( ["pfam_min.hmm",im["selfbuild_hmm"]], "combined.hmm" )
+#accessions = get_accessions( "combined.hmm" )
+#missing_accesions = set(desired_accessions) - set(accessions)
+#raise Exception("test")
 
 
 # DEBUG test parsing hmmscan output
-#hmmscan_result = read_hmmscan_output( im["hmmer_output_example"] )
+hmmscan_result = read_hmmscan_output( im["hmmer_output_example"] )
+raise Exception("test")
 
 # DEBUG test filtering hmmscan output
 #filtered_hmmscan_result = get_filtered_hmmscan_result( hmmscan_result )
