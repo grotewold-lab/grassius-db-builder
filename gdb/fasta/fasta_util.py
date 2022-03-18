@@ -45,7 +45,7 @@ def get_all_gene_ids( fasta_filepath ):
     return result
     
     
-def get_records_for_gene_ids( fasta_filepath, gene_ids ):
+def read_records_for_gene_ids( fasta_filepath, gene_ids ):
     """
     load a subset of the given fasta file
     yields records that are related to the given list of gene IDs
