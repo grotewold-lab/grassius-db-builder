@@ -44,74 +44,71 @@ class ChadoBuilder:
         self.docker_container = container
         self.conn_str = f"dbname=postgres host=localhost port={port} user=postgres password=postgres"
         
-        # make sure we can connect to the database
-        self._test_db_connection()
-        
-        # check/initialize cvterm table
-        self._init_dbxrefs()
-        self._init_cvs()
-        self._init_cvterms()
-        
-        
-    def _test_db_connection(self):
+        with psycopg2.connect(self.conn_str) as conn:
+            with conn.cursor() as cur:
+                
+                # make sure we can connect to the database
+                self._test_db_connection(cur)
+
+                # check/initialize boilerplate tables
+                self._init_dbxrefs(cur)
+                self._init_cvs(cur)
+                self._init_cvterms(cur)
+                
+                
+    def _test_db_connection(self,cur):
         """
-        raise an exception if we can't connect to the database
+        raise an exception if we can't make a query
         
         this is used in constructor
         """
-        with psycopg2.connect(self.conn_str) as conn:
-            with conn.cursor() as cur:
-                try:
-                    cur.execute("SELECT * from cvterm limit 1")
-                except:
-                    raise Exception("could not connect to the database")
+        try:
+            cur.execute("SELECT * from cvterm limit 1")
+        except:
+            raise Exception("could not connect to the database")
         
         
-    def _init_dbxrefs(self):
+    def _init_dbxrefs(self, cur):
+        """
+        Make sure the dbxref table has all necessary entries
+        
+        this is used in constructor
+        """
+        
+        cur.execute("SELECT dbxref_id from dbxref")
+        existing_dbxref_ids = [v[0] for v in cur.fetchall()]
+
+        for entry in required_dbxrefs:
+            dbxref_id = entry[0]
+            if dbxref_id not in existing_dbxref_ids:
+                cur.execute( """
+                    INSERT INTO dbxref 
+                    (dbxref_id,db_id,accession) 
+                    VALUES (%s,%s,%s) 
+                    """, entry )
+        
+        
+    def _init_cvs(self, cur):
         """
         Make sure the cv table has all necessary entries
         
         this is used in constructor
         """
         
-        with psycopg2.connect(self.conn_str) as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT dbxref_id from dbxref")
-                existing_dbxref_ids = [v[0] for v in cur.fetchall()]
-                    
-                for entry in required_dbxrefs:
-                    dbxref_id = entry[0]
-                    if dbxref_id not in existing_dbxref_ids:
-                        cur.execute( """
-                            INSERT INTO dbxref 
-                            (dbxref_id,db_id,accession) 
-                            VALUES (%s,%s,%s) 
-                            """, entry )
-        
-        
-    def _init_cvs(self):
-        """
-        Make sure the cv table has all necessary entries
-        
-        this is used in constructor
-        """
-        
-        with psycopg2.connect(self.conn_str) as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT cv_id from cv")
-                existing_cv_ids = [v[0] for v in cur.fetchall()]
-                    
-                for entry in required_cvs:
-                    cv_id = entry[0]
-                    if cv_id not in existing_cv_ids:
-                        cur.execute( """
-                            INSERT INTO cv 
-                            (cv_id,name,definition) 
-                            VALUES (%s,%s,%s) 
-                            """, entry )
+        cur.execute("SELECT cv_id from cv")
+        existing_cv_ids = [v[0] for v in cur.fetchall()]
+
+        for entry in required_cvs:
+            cv_id = entry[0]
+            if cv_id not in existing_cv_ids:
+                cur.execute( """
+                    INSERT INTO cv 
+                    (cv_id,name,definition) 
+                    VALUES (%s,%s,%s) 
+                    """, entry )
                         
         
-    def _init_cvterms(self):
+    def _init_cvterms(self, cur):
         """
         Make sure the cvterm table has all necessary entries
         
@@ -120,23 +117,22 @@ class ChadoBuilder:
         this is used in constructor
         """
         
+        cur.execute("SELECT cvterm_id from cvterm")
+        existing_cvterm_ids = [v[0] for v in cur.fetchall()]
+
         cvterms = {}
-        with psycopg2.connect(self.conn_str) as conn:
-            with conn.cursor() as cur:
-                cur.execute("SELECT cvterm_id from cvterm")
-                existing_cvterm_ids = [v[0] for v in cur.fetchall()]
-                    
-                for entry in required_cvterms:
-                    cvterm_id = entry[0]
-                    if cvterm_id not in existing_cvterm_ids:
-                        cur.execute( """
-                            INSERT INTO cvterm 
-                            (cvterm_id,cv_id,dbxref_id,name,definition) 
-                            VALUES (%s,%s,%s,%s,%s) 
-                            """, entry )
-                        
-                    name = entry[3]
-                    cvterms[name] = cvterm_id
+        
+        for entry in required_cvterms:
+            cvterm_id = entry[0]
+            if cvterm_id not in existing_cvterm_ids:
+                cur.execute( """
+                    INSERT INTO cvterm 
+                    (cvterm_id,cv_id,dbxref_id,name,definition) 
+                    VALUES (%s,%s,%s,%s,%s) 
+                    """, entry )
+
+            name = entry[3]
+            cvterms[name] = cvterm_id
         
         self.cvterms = cvterms
         
@@ -174,7 +170,7 @@ class ChadoBuilder:
                     transcript_id = rec.id
                     name,clazz,family = df.loc[ df["gene_id"] == gene_id, ["name","class","family"] ].values[0]
                     # insert one sequence
-                    _insert_sequence( str(rec.seq), gene_id, transcript_id, name, clazz, family, is_protein )
+                    _insert_sequence( cur, str(rec.seq), gene_id, transcript_id, name, clazz, family, is_protein )
             
             
             
