@@ -6,13 +6,35 @@ from ..input_manager import InputManager
 import docker
 import tempfile
 import shutil
+import time
+import numpy as np
 
 image_name = "gdb-chado-image"
 container_name = "gdb-chado-container"
-default_port = 8642
     
     
-def get_existing_template_db_container():
+def container_maps_to_port( container, port ):
+    """
+    Return true if the given docker container is mapped to the given port on the host.
+    
+    This should only be used for a container that was created by init_db_container()
+    
+    Arguments:
+    ----------
+    container -- (docker.models.containers.Container) the docker container in question
+    replace -- (int) the expected port number on the host machine
+    """
+    
+    sport = str(port)
+    
+    for entry in container.ports['5432/tcp']:
+        if entry['HostPort'] != sport:
+            return False
+        
+    return True
+        
+    
+def get_existing_db_container():
     """
     Get the relevant docker container if it exists
     otherwise return None
@@ -24,7 +46,7 @@ def get_existing_template_db_container():
 
     
     
-def init_template_db_container( replace=False, port=None ):
+def init_db_container( port, replace=False ):
     """
     Start running an empty chado database locally in docker
     
@@ -32,18 +54,15 @@ def init_template_db_container( replace=False, port=None ):
     
     Arguments:
     ----------
+    port -- (int) the host port that will be used to access the database
     replace -- (bool) (optional) True if an existing container from previous runs should be replaced
                                 otherwise an exception will be thrown if the container already exists
-    port -- (int) (optional) the host port that will be usable for access to the database
     """
-    
-    if port is None:
-        port = default_port
     
     client = docker.from_env()
     
     # check if container is already running
-    ec = get_existing_template_db_container()
+    ec = get_existing_db_container()
     if ec is not None:
         if replace:
             if ec.status != "exited":
@@ -56,18 +75,63 @@ def init_template_db_container( replace=False, port=None ):
     if not image_exists():
         init_template_db_image()
         
-    # sudo docker run -d -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 8642:5432 -it gdb-chado-image
-        
     # start new container and keep it running
-    return client.containers.run(image_name,
+    container = client.containers.run(image_name,
                                  name=container_name, 
                                  ports={'5432/tcp':port},
                                  environment={"POSTGRES_USER":"postgres",
                                               "POSTGRES_PASSWORD":"postgres"},
                                  detach=True, 
                                  tty=True)
+    print( "created new docker container for database." )
+    
+    # wait for initialization process to finish
+    _moniter_initialization( container )
+    
+    return container
 
 
+def _moniter_initialization( container ):
+    """
+    Wait for the given container to finish initializing
+    Report progress while waiting
+    """
+    linecount = 0
+    expected_lines = 5860
+    
+    # pick line counts to report progress
+    report_points = { 
+        int(pct*expected_lines) : str(int(pct*100))+"% complete" 
+        for pct in np.arange( .05,1,.05 )
+    }
+    
+    print( "initializing database..." )
+    
+    # start recieving log entries from the container
+    buffer = bytearray()
+    for b in container.logs(stream=True):
+        if not isinstance(b,bytes):
+            print( "got unexpected response format from logs. Skipping monitering of database initialization. You may need to manually wait for initialization and try again" )
+            return 
+            
+        buffer.extend(b)
+        if b.endswith(b'\n'): # hit line break
+            line = buffer.decode().strip()
+            buffer = bytearray()
+            linecount += 1
+            
+            # report progess
+            if linecount in report_points.keys():
+                print( report_points[linecount] )   
+            
+            
+            # check if finished
+            if (linecount > 100) and (line == "LOG:  database system is ready to accept connections"):
+                break
+    print( "database is ready!" )
+
+    
+    
 def image_exists():
     """
     Return true if the relevant docker image already exists
