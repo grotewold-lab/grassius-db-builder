@@ -2,6 +2,7 @@
 from .docker_util import *
 from ..fasta import *
 from .cvterm_list import required_dbxrefs,required_cvs,required_cvterms
+from .chado_organisms import required_organisms
 
 import psycopg2
 
@@ -50,10 +51,11 @@ class ChadoBuilder:
                 # make sure we can connect to the database
                 self._test_db_connection(cur)
 
-                # check/initialize boilerplate tables
+                # check/initialize boilerplate tables and member vars
                 self._init_dbxrefs(cur)
                 self._init_cvs(cur)
-                self._init_cvterms(cur)
+                self._init_cvterms(cur) # self.cvterms
+                self._init_organisms(cur) # self.organisms
                 
                 
     def _test_db_connection(self,cur):
@@ -137,15 +139,64 @@ class ChadoBuilder:
         self.cvterms = cvterms
         
         
+    def _init_organisms(self,cur):
+        """
+        Make sure the organism table has all necessary entries
         
-    def insert_sequences( self, metadata_df, fasta_filepath, is_protein ):
+        build a dictionary (self.organisms) to efficiently lookup organism IDs
+        
+        this is used in constructor
+        """        
+        
+        organisms = {}
+        
+        for entry in required_organisms:
+            c_name, is_name = entry[-2:]
+            
+            cur.execute("""
+                SELECT organism_id
+                FROM organism
+                WHERE (common_name = %s) and (infraspecific_name = %s);
+            """, (c_name, is_name))
+            result = cur.fetchone()
+
+            if result is not None:
+                org_id = result[0]
+            else:
+                cur.execute( """
+                    INSERT INTO organism
+                    (abbreviation,genus,species,common_name,infraspecific_name) 
+                    VALUES (%s,%s,%s,%s,%s) 
+                    RETURNING organism_id
+                """, entry )
+                result = cur.fetchone()
+                org_id = result[0]
+            
+            organisms[(c_name,is_name)] = org_id
+            
+        # check consistency with get_all_organisms()
+        for org in get_all_organisms():
+            if org not in organisms.keys():
+                raise Exception( f"internal consistency failed. id for organism {org}" )
+            
+        self.organisms = organisms
+        
+        
+        
+    def insert_sequences( self, organism, metadata_df, fasta_filepath, is_protein ):
         """
         Insert genetic sequences into the database
         
         Metadata must be provided for a subset of gene IDs present in the fasta file
         
+        DNA sequences should be inserted before thei corresponding protein sequences. 
+        When inserting protein sequences, the "transcript" field of the fasta headers
+        is used to relate the new sequences with existing DNA sequences.
+        
         Arguments:
         ----------
+        organism -- (pair of str) organism common-name and infraspecific-name
+                            e.g. ["Maize","v3"]
         metadata_df -- (DataFrame) a dataframe with the following columns:
                             "gene_id","name","class","family"
         fasta_filepath -- (str) the path to a fasta file containing sequences
@@ -170,24 +221,79 @@ class ChadoBuilder:
                     transcript_id = rec.id
                     name,clazz,family = df.loc[ df["gene_id"] == gene_id, ["name","class","family"] ].values[0]
                     # insert one sequence
-                    _insert_sequence( cur, str(rec.seq), gene_id, transcript_id, name, clazz, family, is_protein )
+                    _insert_sequence( cur, org_id, str(rec.seq), gene_id, transcript_id, name, clazz, family, is_protein )
             
             
             
-    def _insert_sequence( cur, sequence, gene_id, transcript_id, name, clazz, family, is_protein ):
+    def _insert_sequence( cur, org_id, sequence, gene_id, transcript_id, name, clazz, family, is_protein ):
         """
-        used internally in insert_sequences()
+        used in insert_sequences()
         """
+        
+        if _get_feature_id( cur, transcript_id ) is not None:
+            print( f'transcript ID "{transcript_id}" already taken, skipping insert...' )
         
         if is_protein:
             type_id = self.cvterms["polypeptide"]
         else:
             type_id = self.cvterms["DNA"]
             
+        # insert feature with sequence and identifiers
+        cur.execute("""
+            INSERT INTO chado.feature 
+            (organism_id, name, uniquename, residues, seqLen, 
+                md5checksum, type_id)
+            VALUES (%s,%s,%s,%s,%s,%s,%s)
+            RETURNING feature_id
+        """, (org_id,name,transcript_id,sequence,len(sequence),
+              self._checksum(dna_seq),type_id))
+        (feature_id,) = cur.fetchone()
         
-        raise Exception("not implemented")
+        # insert featureprops
+        _insert_featureprop( cur, feature_id, "class", clazz )
+        _insert_featureprop( cur, feature_id, "supported_by_domain_match", family )
+        _insert_featureprop( cur, feature_id, "gene_by_genome_location", gene_id )
+        
+    def _insert_featureprop( cur, feature_id, type_name, value ):
+        """
+        insert a row into the featureprop table
+        
+        used in _insert_sequence()
+        """
+        type_id = self.cvterms[type_name]
+        cur.execute("""
+            INSERT INTO chado.featureprop (feature_id, type_id, value)
+            VALUES (%s,%s,%s);
+        """, (feature_id,type_id,value))
         
         
+    def _checksum( seq ):
+        """
+        get a value to insert into table "feature", column "md5checksum"
+        
+        corresponds with the given sequence in column "residues"
+        
+        Using in _insert_sequence()
+        """
+        return  hashlib.md5(seq.encode('utf-8')).hexdigest()
+        
+        
+        
+    def _get_feature_id( cur, uniquename ):
+        """
+        used in _insert_sequence()
+        """
+        
+        cur.execute("""
+            SELECT feature_id
+            FROM chado.feature
+            WHERE uniquename = %s;
+        """, (uniquename,))
+        result = cur.fetchone()
+        
+        if result is None:
+            return None
+        return result[0]
         
                 
         
