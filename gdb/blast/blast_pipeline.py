@@ -1,7 +1,7 @@
 from .blast_commands import prepare_blast_db,run_blastn
 from .util import annotate_blast_result
 from ..util import load_gene_annotations
-from ..fasta import get_records_for_gene_ids,get_gene_id_from_record
+from ..fasta import read_records_for_gene_ids,get_gene_id_from_record
 import pandas as pd
 
 def run_blast_and_annotate( 
@@ -31,7 +31,7 @@ def run_blast_and_annotate(
     result_df = pd.DataFrame()
 
     # iterate over protein sequences related to the list of ids
-    for r in get_records_for_gene_ids(needle_dna_fasta,gene_id_subset):
+    for r in read_records_for_gene_ids(needle_dna_fasta,gene_id_subset):
         try:
             print(r.id)
 
