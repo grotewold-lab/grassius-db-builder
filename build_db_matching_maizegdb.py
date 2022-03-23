@@ -12,10 +12,6 @@ from gdb.fasta import get_gene_id_from_record
 im = InputManager()
 cb = ChadoBuilder()
 
-# save a snapshot of the database that was built
-cb.write_snapshot( "build_db.sql.tar.gz" )
-raise Exception("test")
-
 # read maizegdb gene_id associations    
 all_gene_ids = []
 all_names = []
@@ -70,3 +66,7 @@ for version in ["v3","v4","v5"]:
     organism = f"Maize_{version}"
     fasta_filepath = im[f"maize_{version}_cdna"]
     cb.insert_sequences( organism, metadata_df, fasta_filepath, is_protein=False )
+
+
+# save a snapshot of the database that was built
+cb.write_snapshot( "build_db.sql.tar.gz" )
