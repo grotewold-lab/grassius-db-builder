@@ -2,9 +2,11 @@
 from .docker_util import *
 from ..fasta import *
 from .cvterm_list import required_dbxrefs,required_cvs,required_cvterms
-from .chado_organisms import required_organisms
+from .chado_organisms import required_organisms,get_all_organisms
 
 import psycopg2
+import hashlib
+import gzip
 
 default_port = 8642
 
@@ -172,7 +174,7 @@ class ChadoBuilder:
                 result = cur.fetchone()
                 org_id = result[0]
             
-            organisms[(c_name,is_name)] = org_id
+            organisms[c_name+"_"+is_name] = org_id
             
         # check consistency with get_all_organisms()
         for org in get_all_organisms():
@@ -181,6 +183,25 @@ class ChadoBuilder:
             
         self.organisms = organisms
         
+        
+    def write_snapshot( self, output_path ):
+        """
+        Save a snapshot of the database to a .sql.tar.gz file
+        """
+        
+        dc = self.docker_container
+        
+        print( "running pg_dump in docker container..." )
+        dc.exec_run( "echo 'localhost:5432:postgres:postgres:postgres' > ~/.pgpass" )
+        dc.exec_run( "pg_dump -h localhost -p 5432 -U postgres --clean --if-exists -f /build_db.sql" )
+
+        print( "extracting archive from docker container..." )
+        bits, stat = dc.get_archive('/build_db.sql')
+        with gzip.open(output_path, 'wb', compresslevel=6) as fout:
+            for chunk in bits:
+                fout.write(chunk)
+                
+        print( "database snapshot saved to " + output_path )
         
         
     def insert_sequences( self, organism, metadata_df, fasta_filepath, is_protein ):
@@ -195,8 +216,8 @@ class ChadoBuilder:
         
         Arguments:
         ----------
-        organism -- (pair of str) organism common-name and infraspecific-name
-                            e.g. ["Maize","v3"]
+        organism -- (str) organism common-name and infraspecific-name
+                            e.g. "Maize_v3"
         metadata_df -- (DataFrame) a dataframe with the following columns:
                             "gene_id","name","class","family"
         fasta_filepath -- (str) the path to a fasta file containing sequences
@@ -204,12 +225,17 @@ class ChadoBuilder:
                              false if the it contains dna sequences
         """
         
+        # validate organism
+        if organism not in self.organisms.keys():
+            raise Exception( f"unrecognized organism \"{organism}\". expected one of: {self.organisms.keys()}")
+        org_id = self.organisms[organism]
+        
         # make sure the required metadata has been provided
         for col in ["gene_id","name","class","family"]:
             if col not in metadata_df.columns:
                 raise Exception( f'metadata is missing a required column: "{col}"' )
         df = metadata_df
-        all_gene_ids = df["gene_id"].value
+        all_gene_ids = df["gene_id"].values
                 
         # connect to the database
         with psycopg2.connect(self.conn_str) as conn:
@@ -221,17 +247,18 @@ class ChadoBuilder:
                     transcript_id = rec.id
                     name,clazz,family = df.loc[ df["gene_id"] == gene_id, ["name","class","family"] ].values[0]
                     # insert one sequence
-                    _insert_sequence( cur, org_id, str(rec.seq), gene_id, transcript_id, name, clazz, family, is_protein )
+                    self._insert_sequence( cur, org_id, str(rec.seq), gene_id, transcript_id, name, clazz, family, is_protein )
             
             
             
-    def _insert_sequence( cur, org_id, sequence, gene_id, transcript_id, name, clazz, family, is_protein ):
+    def _insert_sequence( self, cur, org_id, sequence, gene_id, transcript_id, name, clazz, family, is_protein ):
         """
         used in insert_sequences()
         """
         
-        if _get_feature_id( cur, transcript_id ) is not None:
-            print( f'transcript ID "{transcript_id}" already taken, skipping insert...' )
+        if self._get_feature_id( cur, transcript_id ) is not None:
+            #print( f'transcript ID "{transcript_id}" already taken, skipping insert...' )
+            return
         
         if is_protein:
             type_id = self.cvterms["polypeptide"]
@@ -240,21 +267,21 @@ class ChadoBuilder:
             
         # insert feature with sequence and identifiers
         cur.execute("""
-            INSERT INTO chado.feature 
+            INSERT INTO feature 
             (organism_id, name, uniquename, residues, seqLen, 
                 md5checksum, type_id)
             VALUES (%s,%s,%s,%s,%s,%s,%s)
             RETURNING feature_id
         """, (org_id,name,transcript_id,sequence,len(sequence),
-              self._checksum(dna_seq),type_id))
+              self._checksum(sequence),type_id))
         (feature_id,) = cur.fetchone()
         
         # insert featureprops
-        _insert_featureprop( cur, feature_id, "class", clazz )
-        _insert_featureprop( cur, feature_id, "supported_by_domain_match", family )
-        _insert_featureprop( cur, feature_id, "gene_by_genome_location", gene_id )
+        self._insert_featureprop( cur, feature_id, "class", clazz )
+        self._insert_featureprop( cur, feature_id, "supported_by_domain_match", family )
+        self._insert_featureprop( cur, feature_id, "gene_by_genome_location", gene_id )
         
-    def _insert_featureprop( cur, feature_id, type_name, value ):
+    def _insert_featureprop( self, cur, feature_id, type_name, value ):
         """
         insert a row into the featureprop table
         
@@ -262,12 +289,12 @@ class ChadoBuilder:
         """
         type_id = self.cvterms[type_name]
         cur.execute("""
-            INSERT INTO chado.featureprop (feature_id, type_id, value)
+            INSERT INTO featureprop (feature_id, type_id, value)
             VALUES (%s,%s,%s);
         """, (feature_id,type_id,value))
         
         
-    def _checksum( seq ):
+    def _checksum( self, seq ):
         """
         get a value to insert into table "feature", column "md5checksum"
         
@@ -279,14 +306,14 @@ class ChadoBuilder:
         
         
         
-    def _get_feature_id( cur, uniquename ):
+    def _get_feature_id( self, cur, uniquename ):
         """
         used in _insert_sequence()
         """
         
         cur.execute("""
             SELECT feature_id
-            FROM chado.feature
+            FROM feature
             WHERE uniquename = %s;
         """, (uniquename,))
         result = cur.fetchone()

@@ -53,13 +53,11 @@ def read_records_for_gene_ids( fasta_filepath, gene_ids ):
     
     with open(fasta_filepath) as fin:
         for record in SeqIO.parse(fin, "fasta"):
-            dp = record.description.split()
-            gene_parts = [p for p in dp if p.startswith("gene:")]
-            if len(gene_parts) == 0:
-                continue
-            gene = gene_parts[0].split(":")[1]
+            gene = get_gene_id_from_record(record)
             if gene in gene_ids:
                 yield record
+            else:
+                print( f'skipping fasta record with gene id "{gene}"' )
     
 
 def get_gene_id_from_record( record ):
@@ -67,6 +65,11 @@ def get_gene_id_from_record( record ):
     Get a gene id from the given record, from a fasta file with gene annotations
     The record should be an object of type SeqRecord
     """
+    
+    # special case for MaizeGDB v5 records
+    if record.id.startswith("Zm00001eb"):
+        return record.id.split("_")[0]
+    
     try:
         desc = record.description
         parts = desc.split()
