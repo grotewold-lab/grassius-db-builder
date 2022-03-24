@@ -20,3 +20,48 @@ def get_all_organisms():
     return a list of strings e.g. "Maize_v4"
     """
     return ["_".join(r[-2:]) for r in required_organisms]
+
+
+
+        
+def init_organisms(cur):
+    """
+    Make sure the organism table has all necessary entries
+
+    build a dictionary (self.organisms) to efficiently lookup organism IDs
+
+    this is used in constructor
+    """        
+
+    organisms = {}
+
+    for entry in required_organisms:
+        c_name, is_name = entry[-2:]
+
+        cur.execute("""
+            SELECT organism_id
+            FROM organism
+            WHERE (common_name = %s) and (infraspecific_name = %s);
+        """, (c_name, is_name))
+        result = cur.fetchone()
+
+        if result is not None:
+            org_id = result[0]
+        else:
+            cur.execute( """
+                INSERT INTO organism
+                (abbreviation,genus,species,common_name,infraspecific_name) 
+                VALUES (%s,%s,%s,%s,%s) 
+                RETURNING organism_id
+            """, entry )
+            result = cur.fetchone()
+            org_id = result[0]
+
+        organisms[c_name+"_"+is_name] = org_id
+
+    # check consistency with get_all_organisms()
+    for org in get_all_organisms():
+        if org not in organisms.keys():
+            raise Exception( f"internal consistency failed. id for organism {org}" )
+
+    return organisms

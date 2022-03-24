@@ -1,8 +1,8 @@
 # local imports
 from .docker_util import *
 from ..fasta import *
-from .cvterm_list import required_dbxrefs,required_cvs,required_cvterms
-from .chado_organisms import required_organisms,get_all_organisms
+from .chado_cvterms import init_dbxrefs,init_cvs,init_cvterms
+from .chado_organisms import init_organisms
 
 import psycopg2
 import hashlib
@@ -54,10 +54,10 @@ class ChadoBuilder:
                 self._test_db_connection(cur)
 
                 # check/initialize boilerplate tables and member vars
-                self._init_dbxrefs(cur)
-                self._init_cvs(cur)
-                self._init_cvterms(cur) # self.cvterms
-                self._init_organisms(cur) # self.organisms
+                init_dbxrefs(cur)
+                init_cvs(cur)
+                self.cvterms = init_cvterms(cur)
+                self.organisms = init_organisms(cur) 
                 
                 
     def _test_db_connection(self,cur):
@@ -72,116 +72,6 @@ class ChadoBuilder:
             raise Exception("could not connect to the database")
         
         
-    def _init_dbxrefs(self, cur):
-        """
-        Make sure the dbxref table has all necessary entries
-        
-        this is used in constructor
-        """
-        
-        cur.execute("SELECT dbxref_id from dbxref")
-        existing_dbxref_ids = [v[0] for v in cur.fetchall()]
-
-        for entry in required_dbxrefs:
-            dbxref_id = entry[0]
-            if dbxref_id not in existing_dbxref_ids:
-                cur.execute( """
-                    INSERT INTO dbxref 
-                    (dbxref_id,db_id,accession) 
-                    VALUES (%s,%s,%s) 
-                    """, entry )
-        
-        
-    def _init_cvs(self, cur):
-        """
-        Make sure the cv table has all necessary entries
-        
-        this is used in constructor
-        """
-        
-        cur.execute("SELECT cv_id from cv")
-        existing_cv_ids = [v[0] for v in cur.fetchall()]
-
-        for entry in required_cvs:
-            cv_id = entry[0]
-            if cv_id not in existing_cv_ids:
-                cur.execute( """
-                    INSERT INTO cv 
-                    (cv_id,name,definition) 
-                    VALUES (%s,%s,%s) 
-                    """, entry )
-                        
-        
-    def _init_cvterms(self, cur):
-        """
-        Make sure the cvterm table has all necessary entries
-        
-        build a dictionary (self.cvterms) to efficiently lookup cvterm IDs
-        
-        this is used in constructor
-        """
-        
-        cur.execute("SELECT cvterm_id from cvterm")
-        existing_cvterm_ids = [v[0] for v in cur.fetchall()]
-
-        cvterms = {}
-        
-        for entry in required_cvterms:
-            cvterm_id = entry[0]
-            if cvterm_id not in existing_cvterm_ids:
-                cur.execute( """
-                    INSERT INTO cvterm 
-                    (cvterm_id,cv_id,dbxref_id,name,definition) 
-                    VALUES (%s,%s,%s,%s,%s) 
-                    """, entry )
-
-            name = entry[3]
-            cvterms[name] = cvterm_id
-        
-        self.cvterms = cvterms
-        
-        
-    def _init_organisms(self,cur):
-        """
-        Make sure the organism table has all necessary entries
-        
-        build a dictionary (self.organisms) to efficiently lookup organism IDs
-        
-        this is used in constructor
-        """        
-        
-        organisms = {}
-        
-        for entry in required_organisms:
-            c_name, is_name = entry[-2:]
-            
-            cur.execute("""
-                SELECT organism_id
-                FROM organism
-                WHERE (common_name = %s) and (infraspecific_name = %s);
-            """, (c_name, is_name))
-            result = cur.fetchone()
-
-            if result is not None:
-                org_id = result[0]
-            else:
-                cur.execute( """
-                    INSERT INTO organism
-                    (abbreviation,genus,species,common_name,infraspecific_name) 
-                    VALUES (%s,%s,%s,%s,%s) 
-                    RETURNING organism_id
-                """, entry )
-                result = cur.fetchone()
-                org_id = result[0]
-            
-            organisms[c_name+"_"+is_name] = org_id
-            
-        # check consistency with get_all_organisms()
-        for org in get_all_organisms():
-            if org not in organisms.keys():
-                raise Exception( f"internal consistency failed. id for organism {org}" )
-            
-        self.organisms = organisms
         
         
     def query( self, sql, vars=None ):
