@@ -13,6 +13,7 @@ Running the full pipeline requires a big specialized system
 * Python >= 3.8
 * HMMER 3.3.2
 * BLAST+ 2.9.0
+* BioPerl
 * Docker, Docker-compose
 
 

@@ -80,19 +80,23 @@ class InputManager:
             if not is_public:
                 raise Exception(f'missing private input "{name}".\n\texpected local path: {filepath}')
             
+            # decide if we expect to download a gzipped archive 
+            is_gzipped = url.endswith(".gz")
+            downloaded_path = (filepath + ".gz") if is_gzipped else filepath
+            
             # download the public file
-            compressed_path = filepath + ".gz"
             print( f'downloading public input "{name}"...\n\turl: {url}' )
             req = request.Request( url, data=None, headers=self.dl_headers )
             with closing(request.urlopen(req)) as rin:
-                with open(compressed_path, 'wb') as fout:
+                with open(downloaded_path, 'wb') as fout:
                     shutil.copyfileobj(rin, fout)
             
-            # decompress the downloaded file
-            print( f'extracting downloaded archive for "{name}"...' )
-            with gzip.open(compressed_path, 'rb') as fin:
-                with open(filepath, 'wb') as fout:
-                    shutil.copyfileobj(fin,fout)
+            # decompress the downloaded file if necessary
+            if is_gzipped:
+                print( f'extracting downloaded archive for "{name}"...' )
+                with gzip.open(downloaded_path, 'rb') as fin:
+                    with open(filepath, 'wb') as fout:
+                        shutil.copyfileobj(fin,fout)
             
         # check integrity
         print( f'checking integrity of input "{name}"...' )

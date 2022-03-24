@@ -1,6 +1,9 @@
 # this file contains wrappers for hmmer commands like "hmmscan"
 
+# local imports
 from .hmmer_util import read_hmmscan_output
+
+
 import subprocess
 import tempfile
 import shutil
