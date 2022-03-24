@@ -184,6 +184,21 @@ class ChadoBuilder:
         self.organisms = organisms
         
         
+    def query( self, sql, vars=None ):
+        """
+        Run a query against the database that is being built
+        
+        Arguments:
+        ----------
+        sql - (str) the query to execute, which may container placeholders
+        vars - (optional) (tuple) the values to insert into the query
+        """
+        with psycopg2.connect(self.conn_str) as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, vars)
+                return cur.fetchall()
+            
+        
     def write_snapshot( self, output_path ):
         """
         Save a snapshot of the database to a .sql.tar.gz file

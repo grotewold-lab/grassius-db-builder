@@ -1,5 +1,8 @@
 
-#from gdb import InputManager
+from gdb import InputManager
+
+def test_constructor():
+    im = InputManager()
 
 #def test_prepare_all_inputs():
 #    im = InputManager()
