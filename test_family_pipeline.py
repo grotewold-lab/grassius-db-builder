@@ -20,114 +20,96 @@ import pandas as pd
 
 
 
-
-
 im = gdb.InputManager()
 
 
 # load family criteria
 family_criteria_df = read_family_criteria(im["family_rules"])
 
-# load gene -> transcripts dictionary (in two different forms for convenience)
-transcript_gene_dict = get_transcript_gene_dict(im["maize_v3_proteins"])
-gene_transcript_dict = get_gene_transcript_dict(im["maize_v3_proteins"])
-
-# load old grassius family -> gene dictionary
-df = pd.read_excel( im["old_grassius_names"] )
-old_grassius_families = {}
-for row in df.index:
-    family,gene = df.loc[row,["family","v3_id"]]
-    if family not in old_grassius_families.keys():
-        old_grassius_families[family] = []
-    old_grassius_families[family].append(gene)
+# run itak against maize proteins
+#desired_accessions = get_relevant_accessions(family_criteria)
+#build_minified_hmm( im["pfam_hmm"], desired_accessions, "pfam_min.hmm" )
+#concatenate_hmms( ["pfam_min.hmm",im["selfbuild_hmm"]], "combined.hmm" )
+#ir = ItakRunner(reset=True)
+#ir.set_database( "combined.hmm", family_criteria )
+#itak_results = ir.run_itak( im["maize_v3_proteins"] )
 
 
-# attempt to load pickled hmmscan results and skip some steps
-premade_result_path = "hmmscan_result.p"
-if os.path.exists(premade_result_path):
-    print( "loading premade results and skipping steps..." )
-    
-    with open( premade_result_path, "rb" ) as fin:
-        hmmscan_result = pickle.load( fin )
-    
-    made_temp_folder = False
-    
-else:
-    
-    # create temp folder
-    folder = tempfile.mkdtemp()
-    made_temp_folder = True
-    min_pfam_hmm_path = folder + "/pfam_min.hmm"
-    combined_hmm_path = folder + "/combined.hmm"
+# load premade results as if we had just run itak (above)
+itak_results = {}
+with open( "v3.txt" ) as fin:
+    while True:
+        line = fin.readline()
+        if not line:
+            break
+        parts = line.split("\t")
+        itak_results[parts[0]] = parts[1].strip()
 
-    # create minified hmm with all necessary accessions
-    necessary_accessions = get_relevant_accessions(family_criteria_df)
-    build_minified_hmm( im["pfam_hmm"], necessary_accessions, min_pfam_hmm_path )
-    concatenate_hmms( [min_pfam_hmm_path,im["selfbuild_hmm"]], combined_hmm_path )
-    accessions = get_accessions( combined_hmm_path )
-    missing_accessions = set(necessary_accessions) - set(accessions)
-    if len(missing_accessions) > 0:
-        raise Exception( "combined hmm file is missing necessary accessions!" )
-
-
-    # run hmmscan against maize v3 proteins
-    run_hmmpress( combined_hmm_path )
-    hmmscan_result = run_hmmscan( combined_hmm_path, im["maize_v3_proteins"] )
-
-
-df = hmmscan_result.data
-
-# check if a false-negative gene id is un-fixable using score thresholds
-def is_problematic( gid, forbidden ):
-    for tid in gene_transcript_dict[gid]:
-        accs = df.loc[df["query name"] == tid,"accession"].values
-        for acc in accs:
-            if acc in forbidden:
-                # not problematic because a stricter threshold might fix the issue
-                return False 
-    return True
-    
-    
-# assign family names using UNFILTERED hmmscan results
-# check for false negatives
-# which CANNOT be fixed using score tdhresholds
-acc_dict = get_acc_dict( hmmscan_result )
-families = categorize_all_genes( acc_dict, family_criteria_df, transcript_gene_dict )
-
-for family_name in families.keys():
-    if family_name not in old_grassius_families.keys():
-        continue
-    required = family_criteria_df.loc[family_criteria_df["GRASSIUS"] == family_name,"Required"].values[0]
-    forbidden = family_criteria_df.loc[family_criteria_df["GRASSIUS"] == family_name,"Forbidden"].values[0]
-    fn_genes = set(old_grassius_families[family_name]) - set(families[family_name])
-    fn_genes = [g for g in fn_genes if g in gene_transcript_dict.keys()]
-    fn_genes = [g for g in fn_genes if is_problematic(g, forbidden)]
-    
-    if len(fn_genes) > 0:
         
-        print( f"\nrequired for {family_name} family: {required}" )
-        print( f"forbidden for {family_name} family: {forbidden}" )
-        print( f"problematic false-negatives for {family_name} family:" )
-        for gid in fn_genes:
-            print( f"\t{gid}" )
-            for tid in gene_transcript_dict[gid]:
-                accs = df.loc[df["query name"] == tid,"accession"].values
-                print( f"\t\t{tid} has accessions: {accs}" )
+# convert itak results (based on transcript IDs)
+# to gene -> family classifications
+conflict_count = 0
+conflict_report = ""
+df = pd.DataFrame(columns=['gene_id','family','transcript_id'])
+transcript_genes = get_transcript_gene_dict( im['maize_v3_proteins'] )
+for tid,family in itak_results.items():
+    gid = transcript_genes[tid]
+    if gid in df['gene_id']:
+        ex_fam,ex_tid = df.loc[ df['gene_id'] == gid, ['family','transcript_id'] ].values[0]
+        if ex_fam != family:
+            conflict_count += 1
+            conflict_report += "\n\t".join(["conflict:",
+                    f"transcript {ex_tid} has family {ex_fam}",
+                    f"transcript {tid} has family {family}\n"])
+    else:
+        df.loc[gid,:] = [gid,family,tid]
+        
+        
+# compare with old grassius families
+correct_count = 0
+changed_family_count = 0
+changed_family_report = ""
+old_df = pd.read_excel( im['old_grassius_names'] )
+old_df = old_df[old_df['family'] != 'Orphans']
+all_old_ids = set(old_df['v3_id'])
+all_new_ids = set(df['gene_id'])
+missing_ids = (all_old_ids - all_new_ids)
+new_ids = (all_new_ids - all_old_ids)
+common_ids = all_old_ids.intersection(all_new_ids)
+for gid in common_ids:
+    old_fam = old_df.loc[ old_df['v3_id'] == gid, 'family'].values[0]
+    new_fam = df.loc[ df['gene_id'] == gid, 'family'].values[0]
+    if old_fam == new_fam:
+        correct_count += 1
+    else:
+        changed_family_count += 1
+        changed_family_report += "\n\t".join([f"changed family for {gid}:",
+                f"old family was {old_fam}",
+                f"new family is {new_fam}\n"])
+        
+        
+# save reports
+df.to_csv('all_new_families.csv',index=False)
+with open("conflicts.txt", "w") as fout:
+    fout.write( f"{conflict_count} pairs of transcripts had conflicting families\n\n" )
+    fout.write( conflict_report )
+with open("changed_families.txt", "w") as fout:
+    fout.write( f"{changed_family_count} genes changed families\n\n" )
+    fout.write( changed_family_report )
+with open("missing_genes.txt", "w") as fout:
+    fout.write( "{0} genes were not categorized into families\n".format(len(missing_ids)) )
+    fout.write( "these are genes that were categorized in old grassius\n\n" )
+    for gid in missing_ids:
+        old_fam = old_df.loc[ old_df['v3_id'] == gid, 'family'].values[0]
+        fout.write( f"{gid} old family was {old_fam}\n" )
+with open("new_genes.txt", "w") as fout:
+    fout.write( "{0} new genes were categorized\n".format(len(new_ids)) )
+    fout.write( "these are genes that were missing or considered orphans in old grassius\n\n")
+    for gid in new_ids:
+        new_fam = df.loc[ df['gene_id'] == gid, 'family'].values[0]
+        fout.write( f"{gid} has family {new_fam}\n" )
 
-                
-
-raise Exception("test")
 
 
-# assign family names using FILTERED hmmscan results
-
-filtered_hmmscan_result = get_filtered_hmmscan_result( hmmscan_result )
-filtered_acc_dict = get_acc_dict( filtered_hmmscan_result )
-filtered_families = categorize_all_genes( filtered_acc_dict, family_criteria_df, transcript_gene_dict )
-
-
-# remove temp folder if necessary
-if made_temp_folder:
-    shutil.rmtree(folder)
     
     
