@@ -123,7 +123,7 @@ class ItakRunner:
         shutil.copyfile( fasta_filepath, os.path.join( wd, fname ) )
         
         # run iTAK
-        command = [ "perl", "iTAK.pl", fname, "-a", n_cores ]
+        command = [ "perl", "iTAK.pl", fname, "-a", str(n_cores) ]
         p = subprocess.Popen(command, cwd=wd)
         p.wait()
         
