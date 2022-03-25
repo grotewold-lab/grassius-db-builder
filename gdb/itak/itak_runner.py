@@ -105,11 +105,16 @@ class ItakRunner:
         
         
         
-    def run_itak(self, fasta_filepath):
+    def run_itak(self, fasta_filepath, n_cores=1):
         """
         classify transcripts from the given fasta file
         
         database should be prepared ahead of time using set_database()
+        
+        Arguments:
+        ----------
+        fasta_filepath -- (str) path to the fasta file to analyze
+        n_cores -- (optional) (int) the number of CPUs to use for hmmscan
         """
         
         # copy fasta file to working dir
@@ -118,7 +123,7 @@ class ItakRunner:
         shutil.copyfile( fasta_filepath, os.path.join( wd, fname ) )
         
         # run iTAK
-        command = [ "perl", "iTAK.pl", fname ]
+        command = [ "perl", "iTAK.pl", fname, "-a", n_cores ]
         p = subprocess.Popen(command, cwd=wd)
         p.wait()
         
