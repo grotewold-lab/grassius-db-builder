@@ -15,15 +15,6 @@ im = gdb.InputManager()
 #im.prepare_all_inputs()
 
 
-# run itak against maize proteins
-family_criteria = read_family_criteria(im["family_rules"])
-desired_accessions = get_relevant_accessions(family_criteria)
-build_minified_hmm( im["pfam_hmm"], desired_accessions, "pfam_min.hmm" )
-concatenate_hmms( ["pfam_min.hmm",im["selfbuild_hmm"]], "combined.hmm" )
-ir = ItakRunner(reset=True)
-ir.set_database( "combined.hmm", family_criteria )
-ir.run_itak( im["maize_v3_proteins"] )
-raise Exception("test")
 
 # DEBUG test loading family criteria
 #family_criteria = read_family_criteria(im["family_rules"])

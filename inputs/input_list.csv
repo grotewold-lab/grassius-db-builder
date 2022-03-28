@@ -1,6 +1,6 @@
 name,description,filename,public_url,md5sum
 chado_template,snapshot of an empty chado database,chado-1.31-no-onto.sql,https://github.com/hexylena/chado-schema-builder/releases/download/1.31-jenkins28/chado-1.31-no-onto.sql.gz,58fa773c014395afa9008e9ac23dc366
-family_rules,criteria for assigning families to transcripts,Current_TF_family_rules.xlsx,,6d88b90b3d5b2c7b9ce2aec76f0f2130
+family_rules,criteria for assigning families to transcripts,Current_TF_family_rules.xlsx,,f10762c82c75f80ad79e369ccf60347b
 selfbuild_hmm,selfbuild HM models,TF_selfbuild.hmm,,70f2ecffeae2bd4a514a82c5ad9251d1
 pfam_hmm,pfam HM models,Pfam-A.hmm,http://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam35.0/Pfam-A.hmm.gz,eb895a2152c0e977cb6cf1fee27e3003
 maize_v3_cdna,Fasta file with maize v3 cdna sequences,Zea_mays.AGPv3.22.cdna.all.fa,https://download.maizegdb.org/B73_RefGen_v3/Zea_mays.AGPv3.22.cdna.all.fa.gz,45d70498e9b0327d387044515f450583
