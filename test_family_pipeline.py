@@ -36,15 +36,15 @@ old_families = set(old_df['family'])
 new_families = set(family_criteria_df["GRASSIUS"])
 
 # run itak against maize proteins
-#desired_accessions = get_relevant_accessions(family_criteria)
-#build_minified_hmm( im["pfam_hmm"], desired_accessions, "pfam_min.hmm" )
-#concatenate_hmms( ["pfam_min.hmm",im["selfbuild_hmm"]], "combined.hmm" )
-#ir = ItakRunner(reset=True)
-#ir.set_database( "combined.hmm", family_criteria )
-#itak_results = ir.run_itak( im["maize_v3_proteins"] )
-#with open( "itak_results.txt", "w" ) as fout:
-#    for key,value in itak_results.items():
-#        fout.write( f"{key}\t{value}\n" )
+desired_accessions = get_relevant_accessions(family_criteria_df)
+build_minified_hmm( im["pfam_hmm"], desired_accessions, "pfam_min.hmm" )
+concatenate_hmms( ["pfam_min.hmm",im["selfbuild_hmm"]], "combined.hmm" )
+ir = ItakRunner(reset=True)
+ir.set_database( "combined.hmm", family_criteria_df )
+itak_results = ir.run_itak( im["maize_v3_proteins"] )
+with open( "itak_results.txt", "w" ) as fout:
+    for key,value in itak_results.items():
+        fout.write( f"{key}\t{value}\n" )
 
 
 # load premade results as if we had just run itak (above)
