@@ -9,6 +9,7 @@ attempt to re-create old grassius family categories
 import gdb
 from gdb.fasta import *
 from gdb.hmmer import *
+from gdb.itak import *
 
 
 import tempfile
@@ -36,45 +37,32 @@ old_families = set(old_df['family'])
 new_families = set(family_criteria_df["GRASSIUS"])
 
 # run itak against maize proteins
-desired_accessions = get_relevant_accessions(family_criteria_df)
-build_minified_hmm( im["pfam_hmm"], desired_accessions, "pfam_min.hmm" )
-concatenate_hmms( ["pfam_min.hmm",im["selfbuild_hmm"]], "combined.hmm" )
-ir = ItakRunner(reset=True)
-ir.set_database( "combined.hmm", family_criteria_df )
-itak_results = ir.run_itak( im["maize_v3_proteins"] )
-with open( "itak_results.txt", "w" ) as fout:
-    for key,value in itak_results.items():
-        fout.write( f"{key}\t{value}\n" )
+#desired_accessions = get_relevant_accessions(family_criteria_df)
+#build_minified_hmm( im["pfam_hmm"], desired_accessions, "pfam_min.hmm" )
+#concatenate_hmms( ["pfam_min.hmm",im["selfbuild_hmm"]], "combined.hmm" )
+#ir = ItakRunner(reset=True)
+#ir.set_database( "combined.hmm", family_criteria_df )
+#itak_results = ir.run_itak( im["maize_v3_proteins"] )
+#with open( "itak_results.txt", "w" ) as fout:
+#    for key,value in itak_results.items():
+#        fout.write( f"{key}\t{value}\n" )
 
 
 # load premade results as if we had just run itak (above)
-#itak_results = {}
-#with open( "v3.txt" ) as fin:
-#    while True:
-#        line = fin.readline()
-#        if not line:
-#            break
-#        parts = line.split("\t")
-#        itak_results[parts[0]] = parts[1].strip()
+itak_results = {}
+with open( "itak_results.txt" ) as fin:
+    while True:
+        line = fin.readline()
+        if not line:
+            break
+        parts = line.split("\t")
+        itak_results[parts[0]] = parts[1].strip()
 
         
 # convert itak results (based on transcript IDs)
 # to gene -> family classifications
-conflict_count = 0
-conflict_report = ""
-df = pd.DataFrame(columns=['gene_id','family','transcript_id'])
 transcript_genes = get_transcript_gene_dict( im['maize_v3_proteins'] )
-for tid,family in itak_results.items():
-    gid = transcript_genes[tid]
-    if gid in df['gene_id']:
-        ex_fam,ex_tid = df.loc[ df['gene_id'] == gid, ['family','transcript_id'] ].values[0]
-        if ex_fam != family:
-            conflict_count += 1
-            conflict_report += "\n\t".join(["conflict:",
-                    f"transcript {ex_tid} has family {ex_fam}",
-                    f"transcript {tid} has family {family}\n"])
-    else:
-        df.loc[gid,:] = [gid,family,tid]
+df = get_gene_families( itak_results, transcript_genes, "conflicts.txt" )
         
 # compare new results with old grassius families
 old_df = pd.read_excel( im['old_grassius_names'] )
@@ -101,9 +89,6 @@ for gid in common_ids:
         
 # save reports
 df.to_csv('all_new_families.csv',index=False)
-with open("conflicts.txt", "w") as fout:
-    fout.write( f"{conflict_count} pairs of transcripts had conflicting families\n\n" )
-    fout.write( conflict_report )
 with open("changed_families.txt", "w") as fout:
     fout.write( f"{changed_family_count} genes changed families\n\n" )
     fout.write( changed_family_report )
