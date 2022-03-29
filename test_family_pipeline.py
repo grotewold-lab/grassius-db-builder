@@ -10,6 +10,7 @@ import gdb
 from gdb.fasta import *
 from gdb.hmmer import *
 from gdb.itak import *
+from gdb.grassius import *
 
 
 import tempfile
@@ -63,7 +64,18 @@ with open( "itak_results.txt" ) as fin:
 # to gene -> family classifications
 transcript_genes = get_transcript_gene_dict( im['maize_v3_proteins'] )
 df = get_gene_families( itak_results, transcript_genes, "conflicts.txt" )
+
         
+
+# DEBUG test assigning protein names
+gene_families = df
+old_grassius_names = get_old_grassius_names()
+mgdb_assoc = get_maizegdb_associations()
+test = assign_protein_names( gene_families, old_grassius_names, mgdb_assoc )
+raise Exception('test')
+
+    
+    
 # compare new results with old grassius families
 old_df = pd.read_excel( im['old_grassius_names'] )
 old_df = old_df[old_df['family'] != 'Orphans']

@@ -7,58 +7,20 @@ import gdb
 from gdb import InputManager
 from gdb.chado import ChadoBuilder
 from gdb.fasta import get_gene_id_from_record
+from gdb.grassius import get_maizegdb_associations
 
 
 im = InputManager()
-cb = ChadoBuilder()
+#cb = ChadoBuilder()
 
-# read maizegdb gene_id associations    
-all_gene_ids = []
-all_names = []
-line_count = 0
-filepath = im["maizegdb_gene_id_associations"]
-with open(filepath, "r") as fin:
-    
-    # skip first line
-    fin.readline()
-    
-    while True:
-        
-        line = fin.readline()
-        if not line:
-            break
-        
-        parts = line.split("\t")
-        for gid in parts[1:]:
-            gid = gid.strip()
-            if len(gid) == 0:
-                continue
-            elif gid.startswith("B73v1_"):
-                continue
-            elif gid.startswith("B73v2_"):
-                continue
-            elif gid.startswith("B73v3_"):
-                gid = gid[6:]
-            elif gid.startswith("GRMZM"):
-                pass
-            elif gid.startswith("Zm00001d"):
-                pass
-            elif gid.startswith("Zm00001eb"):
-                pass
-            else:
-                raise Exception("unrecognized prefix for gene id " + gid)
-                
-            all_gene_ids.append( gid )
-            all_names.append( parts[0] )
+# read maizegdb gene_id associations  
+metadata_df = get_maizegdb_associations()
             
-        
 # build dummy metadata 
-metadata_df = pd.DataFrame(data={
-    "gene_id": all_gene_ids,
-    "name": all_names,
-    "class": ["dummy_class"] * len(all_gene_ids),
-    "family": ["dummy_family"] * len(all_gene_ids)
-})
+metadata_df["class"] = ["dummy_class"] * len(metadata_df.index)
+metadata_df["family"] = ["dummy_family"] * len(metadata_df.index)
+
+raise Exception("test")
             
     
 # insert sequences from fasta files
