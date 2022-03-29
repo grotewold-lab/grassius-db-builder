@@ -41,6 +41,16 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc ):
     # for each family, find or create a protein-name-prefix
     family_prefixes = _get_family_prefixes( gene_families, old_grassius_names )
     
+    # for each family, pick the next numerical value for assigning new protein names
+    family_next_suffixes = {}
+    for family in set(gene_families['family']):
+        old_match = old_grassiu_names[old_grassius_names["family"] == family]
+        if len(old_match.index) > 0:
+            next_suffix = old_match["suffix"].max()+1
+        else:
+            next_suffix = 1
+        family_next_suffixes[family] = next_suffix
+    
     # iterate through genes to find agreement between old and new families
     n = len(gene_families.index)
     for i,row in enumerate(gene_families.index):
@@ -85,7 +95,7 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc ):
         unused_old_names = unused_old_grassius_names[unused_old_grassius_names["family"] == new_family]
         if len(unused_old_names.index)>0:
             new_name = unused_old_names["name"].values[0]
-            old_gene_id = unused_old_names["name"].values[0]
+            old_gene_id = unused_old_names["gene_id"].values[0]
             all_new_gene_ids = _get_related_gene_ids(gene_id,mgdb_assoc)
             print("\n\t".join([
                 f're-assigning old protein name "{new_name}"',
@@ -98,8 +108,10 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc ):
             continue
         
         # make up a new protein name
-        
-            
+        prefix = family_prefixes[new_family]
+        suffix = family_next_suffixes[new_family]
+        family_next_suffixes[new_family] = suffix + 1
+        result[gid] = prefix + str(suffix)
     
     return result
 
