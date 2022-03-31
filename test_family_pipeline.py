@@ -71,7 +71,12 @@ df = get_gene_families( itak_results, transcript_genes, "conflicts.txt" )
 gene_families = df
 old_grassius_names = get_old_grassius_names()
 mgdb_assoc = get_maizegdb_associations()
-test = assign_protein_names( gene_families, old_grassius_names, mgdb_assoc )
+test = assign_protein_names( gene_families, old_grassius_names, mgdb_assoc, 
+                            report_folder = "." )
+df = pd.DataFrame(columns=["gene_id","name"])
+for gid,name in test.items():
+    df.loc[gid,:] = [gid,name]
+df.sort_values("name").to_csv("all_new_names.csv", index=False)
 raise Exception('test')
 
     

@@ -7,7 +7,7 @@ from ..input_manager import InputManager
 import pandas as pd
 
 
-def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc ):
+def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc, report_folder=None ):
     """
     Assign protein names to gene IDs in the traditional grassius form
     
@@ -18,8 +18,14 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc ):
     This function should be called once, so the first argument should contain
     the full set of genes to be included in the database
     
-    For assigning brand new protein names, the order of the given genes
-    will be used for the numerical ordering of protein names
+    The order of the given genes (order of rows in gene_families) may 
+    affect the results:
+        In cases where gene-family categories conflict with 
+        maizegdb gene-gene associations, the gene-family that
+        was encountered first takes priority 
+        
+        numeric suffixes for protein names (only when a brand 
+        new protein name is created)
     
     return a dictionary where keys are gene ids, values are protein names
     
@@ -32,14 +38,23 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc ):
                           output from get_old_grassius_names()
     mgdb_assoc -- (dataframe) relates gene_ids between genome versions
                         output from get_maizegdb_associations()
+    report_folder -- (optional) (str) path to a folder to save text reports
     """
     result = {}
+    
+    # prepare to write report if necessary
+    if report_folder is None:
+        fout_reas = None
+        fout_conf = None
+    else:
+        fout_reas = open(report_folder + "/reassigned_names.txt", "w")
+        fout_conf = open(report_folder + "/assoc_conflicts.txt", "w")
     
     # parse numeric suffixes from protein names (add columns)
     old_grassius_names = _parse_protein_names(old_grassius_names)
     
     # for each family, find or create a protein-name-prefix
-    family_prefixes = _get_family_prefixes( gene_families, old_grassius_names )
+    family_prefixes = _get_family_prefixes( gene_families, old_grassius_names, report_folder )
     
     # for each family, pick the next numerical value for assigning new protein names
     family_next_suffixes = {}
@@ -70,9 +85,15 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc ):
             old_family = old_match["family"].values[0]
             if old_family == new_family:
                 protein_name = old_match["name"].values[0]
-                for gene_id in set(rel_ids):
-                    if gene_id in gene_families["gene_id"]:
-                        result[gene_id] = protein_name
+                for gid in set(rel_ids):
+                    if gid in result.keys():
+                        conf_name = result[gid]
+                        _report(fout_conf,"\n\t".join([
+                            f'\ngene id "{gene_id}" has traditional name "{protein_name}"',
+                            f'but assocated gene_id "{gid}" aleady has name "{conf_name}"'
+                        ]))
+                    else:
+                        result[gid] = protein_name
           
         
     # identify protein names that were in old grassius, but are now unused
@@ -92,31 +113,56 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc ):
         gene_id,new_family = df.loc[row,["gene_id","family"]]
         if gene_id in result.keys():
             continue
+        rel_ids = _get_related_gene_ids(gene_id,mgdb_assoc)
         unused_old_names = unused_old_grassius_names[unused_old_grassius_names["family"] == new_family]
         if len(unused_old_names.index)>0:
-            new_name = unused_old_names["name"].values[0]
+            protein_name = unused_old_names["name"].values[0]
             old_gene_id = unused_old_names["v3_id"].values[0]
-            all_new_gene_ids = _get_related_gene_ids(gene_id,mgdb_assoc)
-            print("\n\t".join([
-                f're-assigning old protein name "{new_name}"',
+            _report(fout_reas,"\n\t".join([
+                f'\nre-assigning old protein name "{protein_name}"',
                 f'old gene id: {old_gene_id}',
-                f'new gene id(s): {all_new_gene_ids}'
+                f'new gene id(s): {rel_ids}'
             ]))
-            for gid in all_new_gene_ids:
-                result[gid] = new_name
-            unused_old_grassius_names = unused_old_grassius_names[unused_old_grassius_names['name'] != new_name]
+            for gid in set(rel_ids):
+                if gid in result.keys():
+                    conf_name = result[gid]
+                    _report(fout_conf,"\n\t".join([
+                        f'\ngene id "{gene_id}" has reassigned name "{protein_name}"',
+                        f'but assocated gene_id "{gid}" aleady has name "{conf_name}"'
+                    ]))
+                else:
+                    result[gid] = protein_name
+                
+                    #debug
+                    print( f'{gid} -> {protein_name}' )
+                
+            unused_old_grassius_names = unused_old_grassius_names[unused_old_grassius_names['name'] != protein_name]
             continue
         
         # make up a new protein name
         prefix = family_prefixes[new_family]
         suffix = family_next_suffixes[new_family]
         family_next_suffixes[new_family] = suffix + 1
-        result[gene_id] = prefix + str(suffix)
+        new_name = prefix + str(suffix)
+        for gid in set(rel_ids):
+            if gid in result.keys():
+                conf_name = result[gid]
+                _report(fout_conf,"\n\t".join([
+                    f'\ngene id "{gene_id}" has new name "{new_name}"',
+                    f'but assocated gene_id "{gid}" aleady has name "{conf_name}"'
+                ]))
+            else:
+                result[gid] = new_name
     
     return result
 
 
-def _get_family_prefixes( gene_families, old_grassius_names ):
+def _check_conflicts( rel_ids, family, result ):
+    """
+    Check if any of the related ids 
+    """
+
+def _get_family_prefixes( gene_families, old_grassius_names, report_folder=None ):
     """
     Find or create protein-name-prefixes for all families
     
@@ -129,8 +175,15 @@ def _get_family_prefixes( gene_families, old_grassius_names ):
                         concatenated outputs from gdb.itak.get_gene_families
     old_grassius_names -- (dataframe) parsed names from old grassius website
                           output from _parse_protein_names()
+    report_folder -- (optional) (str) path to a folder to save text reports
     """
     result = {}
+    
+    # prepare to write report if necessary
+    if report_folder is None:
+        fout = None
+    else:
+        fout = open(report_folder + "/new_prefixes.txt", "w")
     
     # assert that protein names have been parsed
     if 'prefix' not in old_grassius_names.columns:
@@ -153,14 +206,14 @@ def _get_family_prefixes( gene_families, old_grassius_names ):
             new_prefix = "ZmMIKC"
         else:
             new_prefix = "Zm" + family_name[:3].upper()
-        print(f'using new prefix "{new_prefix}" for new family "{family_name}"')
+            
+        _report(fout, f'using new prefix "{new_prefix}" for new family "{family_name}"')
         
         if new_prefix in result.values():
             raise Exception(f'new prefix "{new_prefix}" already taken')
         result[family_name] = new_prefix
             
     return result
-                       
     
 def _parse_protein_names( old_grassius_names ):
     """
@@ -279,3 +332,14 @@ def get_maizegdb_associations():
         "name": all_names
     })
     
+                       
+    
+def _report( fout, text ):
+    """
+    print some text to the console,
+    and also to the given output stream if it is not None
+    """
+    
+    if fout is not None:
+        fout.write(text + "\n")
+    print(text)
