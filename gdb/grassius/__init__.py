@@ -1,1 +1,2 @@
-from .grassius_util import assign_protein_names, get_maizegdb_associations, get_old_grassius_names
+from .grassius_util import parse_protein_names,assign_protein_names, get_maizegdb_associations, get_old_grassius_names
+from .grassius_tables import build_gene_interaction,build_seq_features,build_uniprot_ids,build_searchable_clones,build_comment_system_urls,build_default_maize_names,build_gene_name,build_family_tables

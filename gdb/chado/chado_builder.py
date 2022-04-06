@@ -1,6 +1,7 @@
 # local imports
 from .docker_util import *
 from ..fasta import *
+from ..grassius import *
 from .chado_cvterms import init_dbxrefs,init_cvs,init_cvterms
 from .chado_organisms import init_organisms
 
@@ -108,6 +109,8 @@ class ChadoBuilder:
                 
         print( "database snapshot saved to " + output_path )
         
+    
+        
         
     def insert_sequences( self, organism, metadata_df, fasta_filepath, is_protein ):
         """
@@ -123,7 +126,7 @@ class ChadoBuilder:
         ----------
         organism -- (str) organism common-name and infraspecific-name
                             e.g. "Maize_v3"
-        metadata_df -- (DataFrame) a dataframe with the following columns:
+        metadata_df -- (DataFrame) a dataframe with columns:
                             "gene_id","name","class","family"
         fasta_filepath -- (str) the path to a fasta file containing sequences
         is_protein -- (bool) true if the given fasta contains protein sequences
@@ -226,9 +229,45 @@ class ChadoBuilder:
         if result is None:
             return None
         return result[0]
+    
+    
+    
+    def build_grassius_tables( self, metadata_df, gene_versions, family_desc_df ):
+        """
+        Build tables which are necessary for grassius, but 
+        are not a part of the chado schema.
         
-                
+        See gdb/grassius/grassius_tables.py for more details
         
+        If any of the tables already exist, they will be replaced.
+        
+        Arguments:
+        ----------
+        metadata_df -- (DataFrame) a dataframe with columns:
+                            "gene_id","name","class","family"
+        gene_versions -- (dictionary) where keys are gene_ids,
+                            values are genome versions e.g. 'v3'
+        family_desc_df -- (DataFrame) a dataframe loaded from private 
+                            input "family_descriptions"
+        """
+        
+        all_family_names = set(metadata_df["family"])
+        
+        # extract numbers from protein names, if necessary
+        if 'suffix' not in metadata_df.columns:
+            metadata_df = parse_protein_names(metadata_df)
+            
+        # connect to the database
+        with psycopg2.connect(self.conn_str) as conn:
+            with conn.cursor() as cur:
+                build_gene_interaction( cur )
+                build_seq_features( cur )
+                build_uniprot_ids( cur )
+                build_searchable_clones( cur )
+                build_comment_system_urls( cur, all_family_names )
+                build_default_maize_names( cur, metadata_df, gene_versions, all_family_names )
+                build_gene_name( cur, metadata_df )
+                build_family_tables( cur, metadata_df, family_desc_df )
         
         
         
