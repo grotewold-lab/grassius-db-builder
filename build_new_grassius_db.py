@@ -78,6 +78,7 @@ for row in df.index:
     clazz = "Coreg" if (raw_clazz == "coregulators") else "TF"
     df.loc[row,"class"] = clazz
 df.sort_values("name").to_csv("metadata.csv", index=False)
+
     
     
 # build gene_id -> genome_version dictionary
@@ -90,8 +91,9 @@ for version in ['v3','v4','v5']:
     
 # start building database
 cb = ChadoBuilder()
-cb.build_grassius_tables( df, gene_versions, family_desc_df )
+cb.build_grassius_tables( df, gene_versions, family_desc_df, old_grassius_names )
 
+raise Exception('test')
     
 # insert sequences from fasta files
 for suffix in ["cdna","proteins"]:

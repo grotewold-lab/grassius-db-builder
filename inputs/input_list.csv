@@ -11,7 +11,7 @@ maize_v3_proteins,Fasta file with maize v3 protein sequences,Zea_mays.AGPv3.22.p
 maize_v4_proteins,Fasta file with maize v4 protein sequences,Zm-B73-REFERENCE-GRAMENE-4.0_Zm00001d.2.protein.fa,http://ftp.maizegdb.org/MaizeGDB/FTP/Zm-B73-REFERENCE-GRAMENE-4.0/Zm-B73-REFERENCE-GRAMENE-4.0_Zm00001d.2.protein.fa.gz,881e852a5d7e7d3723ff2ba6d6a278e1
 maize_v5_proteins,Fasta file with maize v5 protein sequences,Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.protein.fa,http://ftp.maizegdb.org/MaizeGDB/FTP/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.protein.fa.gz,5056fa19e0c1cef1a136dd7b69d1b9a6
 blast_output_example,example output from command “tblastn ...”,blast_output_example.txt,,fb886f2348d34a118a1bd4c19a617e6b
-old_grassius_names,"list of proteins’ (name,class,family,synonym) from the old grassius website",old_grassius_names.xlsx,,d7342cb386a2665449eb3bda88757f31
+old_grassius_names,"list of proteins’ (name,class,family,synonym) from the old grassius website",old_grassius_names.xlsx,,d7b9868e21b3ac3e9b481c2bc38898b6
 maize_v5_gff3,annotations for maize v5 genome,Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3,https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3.gz,f871ea0778b4f12992b3ee9ebb67d4b6
 maize_v5_full_fasta,DNA sequences of the whole maize v5 genome,Zm-B73-REFERENCE-NAM-5.0.fa,https://download.maizegdb.org/Zm-B73-REFERENCE-NAM-5.0/Zm-B73-REFERENCE-NAM-5.0.fa.gz,42892bbb260cd0da9e14707ccdc433fa
 maizegdb_gene_ids,list of traditional protein names and all related gene IDs according to maizegdb,maizegdb_gene_ids.txt,,b762189e7b4664aaaac415bad8f96b70

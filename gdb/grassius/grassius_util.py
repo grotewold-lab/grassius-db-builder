@@ -50,9 +50,6 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc, report_
         fout_reas = open(report_folder + "/reassigned_names.txt", "w")
         fout_conf = open(report_folder + "/assoc_conflicts.txt", "w")
     
-    # parse numeric suffixes from protein names (add columns)
-    old_grassius_names = parse_protein_names(old_grassius_names)
-    
     # for each family, find or create a protein-name-prefix
     family_prefixes = _get_family_prefixes( gene_families, old_grassius_names, report_folder )
     
@@ -182,7 +179,7 @@ def _get_family_prefixes( gene_families, old_grassius_names, report_folder=None 
             
     return result
     
-def parse_protein_names( old_grassius_names ):
+def parse_protein_names( df ):
     """
     Extract the numerical suffixes from protein names
     
@@ -191,11 +188,11 @@ def parse_protein_names( old_grassius_names ):
     
     Arguments:
     ----------
-    old_grassius_names -- (dataframe) names from old grassius website
-                          output from get_old_grassius_names()
+    df -- (dataframe) with column 'name', containing
+                            protein names
     """
     
-    all_names = list(old_grassius_names['name'])
+    all_names = list(df['name'])
     all_prefixes = []
     all_suffixes = []
     
@@ -209,7 +206,7 @@ def parse_protein_names( old_grassius_names ):
         all_suffixes.append(int(name[(i+1):]))
         
     # return as dataframe
-    df = old_grassius_names.copy()
+    df = df.copy()
     df['prefix'] = all_prefixes
     df['suffix'] = all_suffixes
     return df
@@ -238,10 +235,12 @@ def get_old_grassius_names():
     corresponding with the old grassius website
     
     return a dataframe with columns:
-    "class","family","name","synonym","v3_id"
+    "class","family","name","accepted","prefix","suffix","synonym","v3_id"
     """
     
-    return pd.read_excel( InputManager()['old_grassius_names'] )
+    old_grassius_names = pd.read_excel( InputManager()['old_grassius_names'] )
+    old_grassius_names = parse_protein_names(old_grassius_names)
+    return old_grassius_names
 
     
 def get_maizegdb_associations():

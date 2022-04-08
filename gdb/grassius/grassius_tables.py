@@ -236,7 +236,7 @@ def build_default_maize_names( cur, metadata_df, gene_versions, all_family_names
                 
                 
                 
-def build_gene_name( cur, metadata_df ):
+def build_gene_name( cur, metadata_df, old_grassius_names ):
     """
     Build table "gene_name".
     
@@ -251,6 +251,8 @@ def build_gene_name( cur, metadata_df ):
     ----------
     metadata_df -- (DataFrame) a dataframe with columns:
                         "class","family"
+    old_grassius_names -- (DataFrame) names from old grassius website
+                          output from get_old_grassius_names()
     """
 
         
@@ -268,13 +270,52 @@ def build_gene_name( cur, metadata_df ):
     # insert one row for each protein name
     all_names = set(metadata_df["name"])
     for name in all_names:
-        accepted = ''
+        accepted = 'no'
         synonym = ''
+        
+        # check if name was in old grassius
+        old_match = old_grassius_names[old_grassius_names['name']==name]
+        if len(old_match.index) > 0:
+            accepted = old_match['accepted'].values[0]
+            synonym = old_match['synonym'].values[0]
+            
+        # check if any related gene_ids were in old grassius
+        else:
+            all_gene_ids = metadata_df.loc[metadata_df['name']==name,'gene_id'].values
+            old_names = old_grassius_names.loc[
+                            old_grassius_names['v3_id'].isin(all_gene_ids),
+                            'name'].values
+            accepted = 'no'
+            synonym = ' '.join(old_names)
+            
         cur.execute("""
             INSERT INTO gene_name 
             (grassius_name,accepted,synonym)
             VALUES (%s,%s,%s)
         """, (name,accepted,synonym))
+        
+        
+        
+def add_synonym( cur, protein_name, synonym ):
+    """
+    Check if the given protein_name -> synonym is present in 
+    table 'gene_name', column 'synonym'
+    
+    The values in that column are space-delimited lists of synonyms.
+    
+    If necessary, the given synonym will be appended. 
+    
+    TODO: implement
+    
+    Arguments:
+    ----------
+    protein_name -- (str) the protein name that should have the synonym
+    synonym -- (str) the synonym to add
+    """
+    
+    return None
+    
+    
     
         
 def build_family_tables( cur, metadata_df, family_desc_df ):

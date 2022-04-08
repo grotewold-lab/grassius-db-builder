@@ -232,7 +232,8 @@ class ChadoBuilder:
     
     
     
-    def build_grassius_tables( self, metadata_df, gene_versions, family_desc_df ):
+    def build_grassius_tables( self, metadata_df, gene_versions, 
+                              family_desc_df, old_grassius_names ):
         """
         Build tables which are necessary for grassius, but 
         are not a part of the chado schema.
@@ -249,6 +250,8 @@ class ChadoBuilder:
                             values are genome versions e.g. 'v3'
         family_desc_df -- (DataFrame) a dataframe loaded from private 
                             input "family_descriptions"
+        old_grassius_names -- (DataFrame) names from old grassius website
+                              output from gdb.grassius.get_old_grassius_names()
         """
         
         all_family_names = set(metadata_df["family"])
@@ -266,7 +269,7 @@ class ChadoBuilder:
                 build_searchable_clones( cur )
                 build_comment_system_urls( cur, all_family_names )
                 build_default_maize_names( cur, metadata_df, gene_versions, all_family_names )
-                build_gene_name( cur, metadata_df )
+                build_gene_name( cur, metadata_df, old_grassius_names )
                 build_family_tables( cur, metadata_df, family_desc_df )
         
         
