@@ -13,7 +13,62 @@
 # ChadoBuilder.build_grassius_tables()
 
 
-def build_gene_clone( cur ):
+def build_tfome_metadata( cur, old_grassius_tfomes ):
+    """
+    Build table "tfome_metadata"
+    
+    If the table already exists it will be replaced.
+    
+    Arguments:
+    ----------
+    old_grassius_tfomes -- (DataFrame) output from
+                            get_old_grassius_tfomes()
+    """
+    
+    # create empty table
+    cur.execute("DROP TABLE IF EXISTS tfome_metadata")
+    cur.execute("""
+        CREATE TABLE tfome_metadata (
+            tfmd_id SERIAL PRIMARY KEY,
+            utname               text,
+            transcript_number    text,
+            vector               text,
+            insert_gene_bank_id  text,
+            five_prime_name      text,
+            five_prime_seq       text,
+            five_prime_temp      text,
+            three_prime_name     text,
+            three_prime_seq      text,
+            three_prime_temp     text,
+            pcr_condition        text,
+            request_info         text,
+            notes                text,
+            template             text
+        )
+    """)
+    
+    # insert data
+    df = old_grassius_tfomes
+    for row in df.index:
+        
+        values = df.loc[row,['utname', 
+            'transcript_number', 'vector', 'insert_gene_bank_id',
+            'five_prime_name', 'five_prime_seq', 'five_prime_temp',
+            'three_prime_name', 'three_prime_seq', 'three_prime_temp',
+            'pcr_condition', 'request_info', 'notes','template']].values
+        
+        cur.execute("""
+            INSERT INTO tfome_metadata
+            (utname,transcript_number,vector,insert_gene_bank_id,
+            five_prime_name,five_prime_seq,five_prime_temp,
+            three_prime_name,three_prime_seq,three_prime_temp,
+            pcr_condition,request_info,notes,template)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, tuple(values) )
+        
+
+
+def build_gene_clone( cur, old_grassius_tfomes ):
     """
     Build table "gene_clone"
     
@@ -21,8 +76,12 @@ def build_gene_clone( cur ):
     correspond with some rows in the chado table
     "feature_relationship"
     
-    If the table already exists it will be replaced
-    by this function.
+    If the table already exists it will be replaced.
+    
+    Arguments:
+    ----------
+    old_grassius_tfomes -- (Dataframe) output from 
+                            get_old_grassius_tfomes()
     """
     
     # create empty table
@@ -34,31 +93,18 @@ def build_gene_clone( cur ):
             clone_name text
         )
     """)
-    
 
-def insert_gene_clone_entry( cur, v3_id, clone_name ):
-    """
-    If necessary, insert one row into table "gene_clone"
-    
-    This only be called in
-    gdb.chado.ChadoBuilder.insert_tfomes()
-    """
-    
-    # check for exiting row
-    cur.execute("""
-        SELECT gc_id 
-        FROM gene_clone
-        WHERE (v3_id = %s) AND (clone_name = %s)
-    """, (v3_id,clone_name) )
-    existing = cur.fetchone()
-
-    # insert new frel if necessary
-    if existing is None:
+    # insert data
+    df = old_grassius_tfomes
+    all_names = set()
+    for row in df.index:
+        gid,utn = df.loc[row,['gene_id','utname']]
         cur.execute("""
-            INSERT INTO gene_clone (v3_id, clone_name)
+            INSERT INTO gene_clone 
+            (v3_id,clone_name)
             VALUES (%s,%s)
-        """, (v3_id,clone_name))
-        
+        """, (gid,utn) )
+    
 
         
 def build_gene_interaction( cur ):
@@ -138,7 +184,7 @@ def build_uniprot_ids( cur ):
     """)
     
 
-def build_searchable_clones( cur ):
+def build_searchable_clones( cur, metadata_df, old_grassius_tfomes ):
     """
     Build table "searchable_clones", based on the 
     current contents of the database
@@ -147,14 +193,14 @@ def build_searchable_clones( cur ):
     and searching by clone name.
 
     If the table already exists it will be replaced
+
+    Arguments:
+    ----------
+    metadata_df -- (DataFrame) a dataframe with columns:
+                        "gene_id","name","class","family"
+    old_grassius_tfomes -- (dataframe) output from 
+                            get_old_grassius_tfomes()
     """
-
-    # get a list of protein names present in the database
-    cur.execute("""
-        SELECT DISTINCT(name) FROM feature
-    """)
-    all_names = [v[0] for v in cur.fetchall()]
-
 
     # create empty table
     cur.execute("DROP TABLE IF EXISTS searchable_clones")
@@ -166,10 +212,22 @@ def build_searchable_clones( cur ):
         )
     """)
 
-    # insert placeholders to make the site work
-    # TODO lookup clones
-    for name in all_names:
-        clone_list = ''
+    # insert data
+    df = metadata_df
+    all_gids = set(old_grassius_tfomes['gene_id'])
+    for gid in all_gids:
+        
+        df_sub = df[df['gene_id'] == gid]
+        if len(df_sub.index) == 0:
+            continue
+        
+        name = df_sub['name'].values[0]
+        
+        clone_list = ' '.join( 
+            old_grassius_tfomes.loc[
+                old_grassius_tfomes['gene_id'] == gid,
+                'utname'].values)
+        
         cur.execute("""
             INSERT INTO searchable_clones 
             (name,clone_list)

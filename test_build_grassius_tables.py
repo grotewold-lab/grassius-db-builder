@@ -18,6 +18,7 @@ from gdb.chado import *
 im = gdb.InputManager()
 family_desc_df = pd.read_csv(im['family_descriptions'])
 old_grassius_names = get_old_grassius_names()
+old_grassius_tfomes = get_old_grassius_tfomes()
 
 # load metadata (created in build_new_grassius_db.py)
 df = pd.read_csv('metadata.csv')
@@ -33,7 +34,8 @@ for version in ['v3','v4','v5']:
     
 # start building database
 cb = ChadoBuilder()
-cb.build_grassius_tables( df, gene_versions, family_desc_df, old_grassius_names )
+cb.build_grassius_tables( df, gene_versions, family_desc_df, 
+                         old_grassius_names, old_grassius_tfomes )
 
     
 # insert sequences from fasta files
@@ -43,5 +45,4 @@ cb.build_grassius_tables( df, gene_versions, family_desc_df, old_grassius_names 
 #        fasta_filepath = im[f"maize_{version}_{suffix}"]
 #        cb.insert_sequences( organism, df, fasta_filepath, is_protein=False )
         
-old_grassius_tfomes = get_old_grassius_tfomes()
 cb.insert_tfomes( old_grassius_tfomes )

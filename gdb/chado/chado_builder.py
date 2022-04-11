@@ -151,9 +151,6 @@ class ChadoBuilder:
                     # insert relationship
                     # tfome dna -> (clone) -> genomic dna transcript
                     self._insert_tfome_frel( cur, tfome_dna_fid,utname, gene_id,tn )
-                    
-                    # insert redundant data in grassius-specific table
-                    insert_gene_clone_entry( cur, gene_id, utname )
             
             
     def _insert_tfome_frel( self, cur, tfome_dna_fid,utname, gene_id,tn ):
@@ -385,7 +382,7 @@ class ChadoBuilder:
     
     
     def build_grassius_tables( self, metadata_df, gene_versions, 
-                              family_desc_df, old_grassius_names ):
+                              family_desc_df, old_grassius_names, old_grassius_tfomes ):
         """
         Build tables which are necessary for grassius, but 
         are not a part of the chado schema.
@@ -404,6 +401,8 @@ class ChadoBuilder:
                             input "family_descriptions"
         old_grassius_names -- (DataFrame) names from old grassius website
                               output from gdb.grassius.get_old_grassius_names()
+        old_grassius_tfomes -- (DataFrame) output from 
+                                gdb.grassius.get_old_grassius_tfomes()
         """
         
         all_family_names = set(metadata_df["family"])
@@ -415,11 +414,12 @@ class ChadoBuilder:
         # connect to the database
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cur:
-                build_gene_clone( cur )
+                build_tfome_metadata( cur, old_grassius_tfomes )
+                build_gene_clone( cur, old_grassius_tfomes )
+                build_searchable_clones( cur, metadata_df, old_grassius_tfomes )
                 build_gene_interaction( cur )
                 build_seq_features( cur )
                 build_uniprot_ids( cur )
-                build_searchable_clones( cur )
                 build_comment_system_urls( cur, all_family_names )
                 build_default_maize_names( cur, metadata_df, gene_versions, all_family_names )
                 build_gene_name( cur, metadata_df, old_grassius_names )

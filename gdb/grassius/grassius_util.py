@@ -252,7 +252,7 @@ def get_old_grassius_tfomes():
     """
     
     df = pd.read_table( InputManager()['old_grassius_tfomes'] )
-    for col in ['sequence','translation','gene_id','transcript_number']:
+    for col in ['sequence','translation','gene_id','transcript_number','notes']:
         df[col] = df[col].fillna('')
     return df
 

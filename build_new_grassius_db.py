@@ -19,7 +19,9 @@ from gdb.chado import *
 
 
 im = gdb.InputManager()
-
+old_grassius_names = get_old_grassius_names()
+old_grassius_tfomes = get_old_grassius_tfomes()
+mgdb_assoc = get_maizegdb_associations()
         
 
 # load family criteria and descriptions
@@ -63,8 +65,6 @@ gene_families = get_gene_families( itak_results, transcript_genes, "conflicts.tx
 
 
 # assign protein names
-old_grassius_names = get_old_grassius_names()
-mgdb_assoc = get_maizegdb_associations()
 protein_names = assign_protein_names( gene_families, old_grassius_names, mgdb_assoc, 
                             report_folder = "." )
 
@@ -93,7 +93,7 @@ for version in ['v3','v4','v5']:
 cb = ChadoBuilder()
 
 # create non-chado tables
-cb.build_grassius_tables( df, gene_versions, family_desc_df, old_grassius_names )
+cb.build_grassius_tables( df, gene_versions, family_desc_df, old_grassius_names, old_grassius_tfomes )
 
     
 # insert sequences from fasta files
@@ -106,8 +106,7 @@ for suffix in ["cdna","proteins"]:
 
         
 
-# add tfome data
-old_grassius_tfomes = get_old_grassius_tfomes()
+# add tfome sequences
 cb.insert_tfomes( old_grassius_tfomes )
 
 
