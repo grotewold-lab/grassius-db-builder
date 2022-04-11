@@ -20,8 +20,6 @@ from gdb.chado import *
 
 im = gdb.InputManager()
 
-
-
         
 
 # load family criteria and descriptions
@@ -44,6 +42,7 @@ family_desc_df = pd.read_csv(im['family_descriptions'])
 #with open( "itak_results.txt", "w" ) as fout:
 #    for key,value in itak_results.items():
 #        fout.write( f"{key}\t{value}\n" )
+
 
 
 # load premade results as if we had just run itak (above)
@@ -81,6 +80,7 @@ df.sort_values("name").to_csv("metadata.csv", index=False)
 
     
     
+    
 # build gene_id -> genome_version dictionary
 gene_versions = {}
 for version in ['v3','v4','v5']:
@@ -89,19 +89,27 @@ for version in ['v3','v4','v5']:
         gene_versions[gid] = version
     
     
-# start building database
+# start a new database or connect to an existing database
 cb = ChadoBuilder()
+
+# create non-chado tables
 cb.build_grassius_tables( df, gene_versions, family_desc_df, old_grassius_names )
 
-raise Exception('test')
     
 # insert sequences from fasta files
 for suffix in ["cdna","proteins"]:
     for version in ["v3","v4","v5"]:
         organism = f"Maize_{version}"
         fasta_filepath = im[f"maize_{version}_{suffix}"]
-        cb.insert_sequences( organism, df, fasta_filepath, is_protein=False )
+        cb.insert_sequences( organism, df, fasta_filepath, 
+                            is_protein=(suffix=='proteins') )
 
         
+
+# add tfome data
+old_grassius_tfomes = get_old_grassius_tfomes()
+cb.insert_tfomes( old_grassius_tfomes )
+
+
 # save a snapshot of the database that was built
-cb.write_snapshot( "build_db.sql.tar.gz" )
+#cb.write_snapshot( "build_db.sql.tar.gz" )

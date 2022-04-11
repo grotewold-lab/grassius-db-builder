@@ -1,4 +1,5 @@
 
+
 import tempfile
 import shutil
 import os
@@ -34,4 +35,13 @@ for version in ['v3','v4','v5']:
 cb = ChadoBuilder()
 cb.build_grassius_tables( df, gene_versions, family_desc_df, old_grassius_names )
 
-raise Exception('test')
+    
+# insert sequences from fasta files
+#for suffix in ["proteins"]:
+#    for version in ["v3","v4","v5"]:
+#        organism = f"Maize_{version}"
+#        fasta_filepath = im[f"maize_{version}_{suffix}"]
+#        cb.insert_sequences( organism, df, fasta_filepath, is_protein=False )
+        
+old_grassius_tfomes = get_old_grassius_tfomes()
+cb.insert_tfomes( old_grassius_tfomes )
