@@ -13,7 +13,8 @@ required_cvterms = [
     [13,  8, 14,"class",""],
     [496, 11,524,"gene_by_genome_location",""],
     [1362,11,1414,"supported_by_domain_match","An attribute to describe a feature that has been predicted using sequence similarity of a known domain. [SO:ke]"],
-    [327,11,355,"derives_from",""],
+    [327, 11,355,"derives_from",""],
+    [435, 11,463,"clone","A piece of DNA that has been inserted in a vector so that it can be propagated in a host bacterium or some other organism. [SO:ke]"]
 ]
 
 
@@ -25,6 +26,7 @@ required_dbxrefs = [
     [14,   5, "0000002"],
     [524,  9, "0000085"],
     [1414, 9, "0000908"],
+    [463,  9, "0000151"],
     [355,  9, "derives_from"],
 ]
     

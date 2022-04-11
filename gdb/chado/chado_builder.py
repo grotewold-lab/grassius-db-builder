@@ -110,17 +110,122 @@ class ChadoBuilder:
         print( "database snapshot saved to " + output_path )
         
     
+    def insert_tfomes( self, old_grassius_tfomes ):
+        """
+        Insert tfome sequences into the chado tabls 'feature' and 
+        'feature_relationship'
+        
+        also insert data into the grassius-specific 'tfome_metadata' table
+        
+        Tfomes will be related to This function should be called after all other 
+        sequences have been inserted using insert_sequences()
+        
+        Arguments:
+        ----------
+        old_grassius_tfomes -- (DataFrame) output from 
+                                gdb.grassius.get_old_grassius_tfomes
+        """
+        
+        org_id = self.organisms["Maize_v3"]
+        
+                
+        # connect to the database
+        with psycopg2.connect(self.conn_str) as conn:
+            with conn.cursor() as cur:
+                
+                # iterate through tfomes
+                for row in old_grassius_tfomes.index:
+                    utname,dna_seq,prot_seq,gene_id,tn = old_grassius_tfomes.loc[
+                        row,['utname','sequence','translation','gene_id','transcript_number']]
+
+                    # insert dna seq
+                    tfome_dna_fid = self._insert_tfome_sequence( cur, org_id, utname, dna_seq, False)
+
+                    # insert protein seq
+                    tfome_prot_fid = self._insert_tfome_sequence( cur, org_id, utname, prot_seq, True)
+
+                    # insert relationship
+                    # protein -> (derives from) -> dna
+                    self._insert_frel( cur, tfome_prot_fid, "derives_from", tfome_dna_fid )
+                    
+                    # insert relationship
+                    # tfome dna -> (clone) -> genomic dna transcript
+                    self._insert_tfome_frel( cur, tfome_dna_fid,utname, gene_id,tn )
+                    
+                    # insert redundant data in grassius-specific table
+                    insert_gene_clone_entry( cur, gene_id, utname )
+            
+            
+    def _insert_tfome_frel( self, cur, tfome_dna_fid,utname, gene_id,tn ):
+        """
+        If necessary, insert one new feature_relationship
+        to relate a tfome to some genomic dna
+        
+        tfome dna -> (clone) -> genomic dna transcript
+        
+        used in insert_tfomes()
+        """
+        if len(gene_id.strip()) == 0:
+            return
+        if "_FG" in gene_id:
+            gt_name = gene_id.split('_')[0] + "_FG" + tn
+        else:
+            gt_name = f'{gene_id}_{tn}'
+        gt_fid = self._get_feature_id( cur, gt_name )
+        if gt_fid is None:
+            print(f'could not find dna transcript "{gt_name}" for tfome "{utname}". Skipping adding feature_relationship...')
+        else:
+            self._insert_frel( cur, tfome_dna_fid, "clone", gt_fid )
+            
+            
+        
+            
+    def _insert_tfome_sequence( self, cur, org_id, utname, sequence, is_protein ):
+        """
+        If necessary, insert one new chado feature with the given tfome sequence.
+        
+        return the relevant feature_id
+        
+        used in insert_tfomes()
+        """
+        
+        if is_protein:
+            type_id = self.cvterms["polypeptide"]
+            uniquename = utname + "_P"
+        else:
+            type_id = self.cvterms["DNA"]
+            uniquename = utname
+        
+        existing_id = self._get_feature_id( cur, uniquename )
+        if existing_id is not None:
+            return existing_id
+            
+        # insert feature with sequence and identifiers
+        cur.execute("""
+            INSERT INTO feature 
+            (organism_id, name, uniquename, residues, seqLen, 
+                md5checksum, type_id)
+            VALUES (%s,%s,%s,%s,%s,%s,%s)
+            RETURNING feature_id
+        """, (org_id,utname,uniquename,sequence,len(sequence),
+              self._checksum(sequence),type_id))
+        (feature_id,) = cur.fetchone()
+        
+        return feature_id
+            
         
         
     def insert_sequences( self, organism, metadata_df, fasta_filepath, is_protein ):
         """
         Insert genetic sequences into the database
         
+        This shouldnot be used for tfomes' sequences. Instead use insert_tfomes().
+        
         Metadata must be provided for a subset of gene IDs present in the fasta file
         
-        DNA sequences should be inserted before thei corresponding protein sequences. 
-        When inserting protein sequences, the "transcript" field of the fasta headers
-        is used to relate the new sequences with existing DNA sequences.
+        DNA sequences should be inserted before their corresponding protein sequences. 
+        When inserting protein sequences, the "transcript" field of each fasta entry's
+        description is used to relate the new sequences with existing DNA sequences.
         
         Arguments:
         ----------
@@ -153,20 +258,38 @@ class ChadoBuilder:
                 for rec in read_records_for_gene_ids(fasta_filepath,all_gene_ids):
                     gene_id = get_gene_id_from_record(rec)
                     transcript_id = rec.id
-                    name,clazz,family = df.loc[ df["gene_id"] == gene_id, ["name","class","family"] ].values[0]
+                    name,clazz,family = df.loc[ df["gene_id"] == gene_id, 
+                                               ["name","class","family"] ].values[0]
+                    
                     # insert one sequence
-                    self._insert_sequence( cur, org_id, str(rec.seq), gene_id, transcript_id, name, clazz, family, is_protein )
+                    fid = self._insert_sequence( cur, org_id, str(rec.seq), gene_id, 
+                                                transcript_id, name, clazz, family, is_protein )
             
-            
+                    # insert feature_relationship for protein sequences
+                    # protein -> (derives from) -> dna
+                    if is_protein:
+                        related_tid = get_related_tid_from_record( rec )
+                        related_fid = self._get_feature_id( cur, related_tid )
+                        if related_fid is None:
+                            raise Exception(f'missing feature with uniquename "{related_tid}"')
+                        self._insert_frel( cur, fid, "derives_from", related_fid )
+                        
+                        
             
     def _insert_sequence( self, cur, org_id, sequence, gene_id, transcript_id, name, clazz, family, is_protein ):
         """
+        if necessary, insert one new chado feature with the given sequence
+        
+        also insert featureprops if necessary
+        
+        return the relevant feature_id
+        
         used in insert_sequences()
         """
         
-        if self._get_feature_id( cur, transcript_id ) is not None:
-            #print( f'transcript ID "{transcript_id}" already taken, skipping insert...' )
-            return
+        existing_id = self._get_feature_id( cur, transcript_id )
+        if existing_id is not None:
+            return existing_id
         
         if is_protein:
             type_id = self.cvterms["polypeptide"]
@@ -183,22 +306,51 @@ class ChadoBuilder:
         """, (org_id,name,transcript_id,sequence,len(sequence),
               self._checksum(sequence),type_id))
         (feature_id,) = cur.fetchone()
+            
+        if not is_protein: 
+            # insert featureprops for dna sequences
+            self._insert_fprop( cur, feature_id, "class", clazz )
+            self._insert_fprop( cur, feature_id, "supported_by_domain_match", family )
+            self._insert_fprop( cur, feature_id, "gene_by_genome_location", gene_id )
+            
+        return feature_id
         
-        # insert featureprops
-        self._insert_featureprop( cur, feature_id, "class", clazz )
-        self._insert_featureprop( cur, feature_id, "supported_by_domain_match", family )
-        self._insert_featureprop( cur, feature_id, "gene_by_genome_location", gene_id )
+            
+    def _insert_frel( self, cur, subject_fid, type_name, object_fid ):
+        """
+        if necessary, insert a row into the feature_relationship table
         
-    def _insert_featureprop( self, cur, feature_id, type_name, value ):
+        used in insert_sequences() and insert_tfomes()
+        """
+        type_id = self.cvterms[type_name]
+        
+        # check for exiting frel
+        cur.execute("""
+            SELECT feature_relationship_id 
+            FROM feature_relationship
+            WHERE (subject_id = %s) AND (type_id = %s) AND (object_id = %s)
+        """, (subject_fid,type_id,object_fid) )
+        existing = cur.fetchone()
+        
+        # insert new frel if necessary
+        if existing is None:
+            cur.execute("""
+                INSERT INTO feature_relationship (subject_id, type_id, object_id)
+                VALUES (%s,%s,%s)
+            """, (subject_fid,type_id,object_fid))
+        
+                                      
+    def _insert_fprop( self, cur, feature_id, type_name, value ):
         """
         insert a row into the featureprop table
         
         used in _insert_sequence()
         """
         type_id = self.cvterms[type_name]
+        
         cur.execute("""
             INSERT INTO featureprop (feature_id, type_id, value)
-            VALUES (%s,%s,%s);
+            VALUES (%s,%s,%s)
         """, (feature_id,type_id,value))
         
         
@@ -216,7 +368,7 @@ class ChadoBuilder:
         
     def _get_feature_id( self, cur, uniquename ):
         """
-        used in _insert_sequence()
+        used in _insert_sequence() and _insert_tfome_sequence()
         """
         
         cur.execute("""
@@ -263,6 +415,7 @@ class ChadoBuilder:
         # connect to the database
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cur:
+                build_gene_clone( cur )
                 build_gene_interaction( cur )
                 build_seq_features( cur )
                 build_uniprot_ids( cur )

@@ -5,10 +5,62 @@
 # These tables mainly contain redundant data for the purposes 
 # of fast performance
 
+# Some of these tables are traditional but not advantagious. 
+# They should be replaced by new rows in chado tables
+# (feature, featureprop, feature_relationship)
+
 # These functions should only be called in
 # ChadoBuilder.build_grassius_tables()
 
 
+def build_gene_clone( cur ):
+    """
+    Build table "gene_clone"
+    
+    this is a traditional table who's data will
+    correspond with some rows in the chado table
+    "feature_relationship"
+    
+    If the table already exists it will be replaced
+    by this function.
+    """
+    
+    # create empty table
+    cur.execute("DROP TABLE IF EXISTS gene_clone")
+    cur.execute("""
+        CREATE TABLE gene_clone (
+            gc_id SERIAL PRIMARY KEY,
+            v3_id text,
+            clone_name text
+        )
+    """)
+    
+
+def insert_gene_clone_entry( cur, v3_id, clone_name ):
+    """
+    If necessary, insert one row into table "gene_clone"
+    
+    This only be called in
+    gdb.chado.ChadoBuilder.insert_tfomes()
+    """
+    
+    # check for exiting row
+    cur.execute("""
+        SELECT gc_id 
+        FROM gene_clone
+        WHERE (v3_id = %s) AND (clone_name = %s)
+    """, (v3_id,clone_name) )
+    existing = cur.fetchone()
+
+    # insert new frel if necessary
+    if existing is None:
+        cur.execute("""
+            INSERT INTO gene_clone (v3_id, clone_name)
+            VALUES (%s,%s)
+        """, (v3_id,clone_name))
+        
+
+        
 def build_gene_interaction( cur ):
     """
     Build table "gene_interaction"
@@ -244,9 +296,6 @@ def build_gene_name( cur, metadata_df, old_grassius_names ):
 
     This is a placeholder to make the website work.
     
-    TODO: handle synonyms
-    TODO: handle accepted
-    
     Arguments:
     ----------
     metadata_df -- (DataFrame) a dataframe with columns:
@@ -293,27 +342,6 @@ def build_gene_name( cur, metadata_df, old_grassius_names ):
             (grassius_name,accepted,synonym)
             VALUES (%s,%s,%s)
         """, (name,accepted,synonym))
-        
-        
-        
-def add_synonym( cur, protein_name, synonym ):
-    """
-    Check if the given protein_name -> synonym is present in 
-    table 'gene_name', column 'synonym'
-    
-    The values in that column are space-delimited lists of synonyms.
-    
-    If necessary, the given synonym will be appended. 
-    
-    TODO: implement
-    
-    Arguments:
-    ----------
-    protein_name -- (str) the protein name that should have the synonym
-    synonym -- (str) the synonym to add
-    """
-    
-    return None
     
     
     

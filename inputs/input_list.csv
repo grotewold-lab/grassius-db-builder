@@ -21,3 +21,4 @@ maize_v4_gff3,annotations for maize v4 genome,Zm-B73-REFERENCE-GRAMENE-4.0_Zm000
 hmmer_output_example,example output from command “hmmscan”,hmmscan_output_example.txt,,3198dea85c64a3ec60bf31585f3ddb21
 maizegdb_gene_id_associations,master list of gene model associations from maizeGDB,MaizeGDB_B73_pangene_2020_11.tsv,https://download.maizegdb.org/Pan-genes/MaizeGDB_B73_pangene_2020_11.tsv.gz,dd6b6d7542c4ec123557829fa0facc96
 itak_git_repo,git repository containing iTAK executable,master.zip,https://github.com/kentnf/iTAK/archive/refs/heads/master.zip,d8f313fa69dca2089cccd43f35d40fc2
+old_grassius_tfomes,all data for tfomes present in old grassius website,tfome_data.txt,,30087cbcf483dcbb8680df33142aeb0f

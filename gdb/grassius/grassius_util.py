@@ -242,6 +242,20 @@ def get_old_grassius_names():
     old_grassius_names = parse_protein_names(old_grassius_names)
     return old_grassius_names
 
+
+def get_old_grassius_tfomes():
+    """
+    get tfome sequences and metadata from the old grassius website
+    
+    return a dataframe with columns including:
+    "utname","gene_id","sequence","translation"
+    """
+    
+    df = pd.read_table( InputManager()['old_grassius_tfomes'] )
+    for col in ['sequence','translation','gene_id','transcript_number']:
+        df[col] = df[col].fillna('')
+    return df
+
     
 def get_maizegdb_associations():
     """

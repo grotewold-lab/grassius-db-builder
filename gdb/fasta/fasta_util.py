@@ -59,22 +59,54 @@ def read_records_for_gene_ids( fasta_filepath, gene_ids ):
             else:
                 print( f'skipping fasta record with gene id "{gene}"' )
     
-
 def get_gene_id_from_record( record ):
     """
     Get a gene id from the given record, from a fasta file with gene annotations
     The record should be an object of type SeqRecord
     """
     
-    # special case for MaizeGDB v5 records
+    # special case for maize v5 records
     if record.id.startswith("Zm00001eb"):
         return record.id.split("_")[0]
+    
+    return get_value_from_record_description( record, 'gene' )
+
+    
+def get_related_tid_from_record( record ):
+    """
+    For a fasta record containing a protein sequence, get the transcript id
+    of the dna sequence that it derives from.
+    
+    Typically this information is found in the record's description.
+    """
+    
+    # special case fo maize v5 records
+    if record.id.startswith("Zm00001eb"):
+        return record.id.replace('_P','_T')
+    
+    return get_value_from_record_description( record, 'transcript' )
+        
+    
+def get_value_from_record_description( record, key ):
+    """
+    Extract a string from the given record's description
+    
+    return None if the given key is not present
+    
+    Arguments:
+    ----------
+    record -- (Bio.SeqRecord.SeqRecord) one fasta entry
+    key -- (str) the label for the description element in question
+            e.g. "gene"
+    """
+    
+    search_str = key + ":"
     
     try:
         desc = record.description
         parts = desc.split()
-        gene_part = next(p for p in parts if p.startswith("gene:"))
-        return gene_part[5:]
+        target_part = next(p for p in parts if p.startswith(search_str))
+        return target_part[len(search_str):]
     except:
-        return ""
+        return None
     
