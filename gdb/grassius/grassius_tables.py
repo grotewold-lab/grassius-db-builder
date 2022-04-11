@@ -275,7 +275,8 @@ def build_comment_system_urls( cur, all_family_names ):
                     
         
         
-def build_default_maize_names( cur, metadata_df, gene_versions, all_family_names ):
+def build_default_maize_names( cur, metadata_df, gene_versions, 
+                              all_family_names, old_grassius_tfomes ):
     """
     Build table "default_maize_names".
 
@@ -295,6 +296,8 @@ def build_default_maize_names( cur, metadata_df, gene_versions, all_family_names
     gene_versions -- (dictionary) where keys are gene_ids,
                         values are genome versions e.g. 'v3'
     all_family_names -- (list of str) list of distinct family names
+    old_grassius_tfomes -- (DataFrame) output from 
+                            get_old_grassius_tfomes()
     """
 
     sorted_families = sorted(list(all_family_names))
@@ -322,7 +325,8 @@ def build_default_maize_names( cur, metadata_df, gene_versions, all_family_names
         all_gene_ids = df_sub["gene_id"].values
         family = df_sub["family"].values[0]
         concat_ids = " ".join(all_gene_ids)
-
+        
+        
         # pick default gene IDs (whichever appears first in metadata)
         did = {}
         for v in ['v3','v4','v5']:
@@ -330,6 +334,14 @@ def build_default_maize_names( cur, metadata_df, gene_versions, all_family_names
                             for gid in all_gene_ids 
                             if gene_versions[gid] == v)
                           ,"")
+            
+        # if one of the IDs is related to an old grassius tfome,
+        # use that as default v3 ID
+        did['v3'] = next( (gid 
+                           for gid in all_gene_ids 
+                           if gid in old_grassius_tfomes['gene_id'].values)
+                         ,did['v3'])
+        
 
         # pick name_sort_order
         # (hidden number used for sorting by protein name)
@@ -344,8 +356,7 @@ def build_default_maize_names( cur, metadata_df, gene_versions, all_family_names
             VALUES (%s,%s,%s,%s,%s,%s,%s)
         """, (name,nso,family,did["v3"],did["v4"],did["v5"],concat_ids))
                 
-                
-                
+            
 def build_gene_name( cur, metadata_df, old_grassius_names ):
     """
     Build table "gene_name".

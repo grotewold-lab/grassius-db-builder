@@ -170,7 +170,8 @@ class ChadoBuilder:
             gt_name = f'{gene_id}_{tn}'
         gt_fid = self._get_feature_id( cur, gt_name )
         if gt_fid is None:
-            print(f'could not find dna transcript "{gt_name}" for tfome "{utname}". Skipping adding feature_relationship...')
+            #print(f'could not find dna transcript "{gt_name}" for tfome "{utname}". Skipping adding feature_relationship...')
+            pass
         else:
             self._insert_frel( cur, tfome_dna_fid, "clone", gt_fid )
             
@@ -421,7 +422,7 @@ class ChadoBuilder:
                 build_seq_features( cur )
                 build_uniprot_ids( cur )
                 build_comment_system_urls( cur, all_family_names )
-                build_default_maize_names( cur, metadata_df, gene_versions, all_family_names )
+                build_default_maize_names( cur, metadata_df, gene_versions, all_family_names, old_grassius_tfomes )
                 build_gene_name( cur, metadata_df, old_grassius_names )
                 build_family_tables( cur, metadata_df, family_desc_df )
         
