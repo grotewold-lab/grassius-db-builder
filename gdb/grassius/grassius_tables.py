@@ -107,15 +107,18 @@ def build_gene_clone( cur, old_grassius_tfomes ):
     
 
         
-def build_gene_interaction( cur ):
+def build_gene_interaction( cur, metadata_df, gene_interactions ):
     """
     Build table "gene_interaction"
     
-    this is a placeholder to make the website work.
-    
-    TODO: insert gene interactions
-    
     If the table already exists it will be replaced
+    
+    Arguments:
+    ----------
+    metadata_df -- (DataFrame) a dataframe with columns:
+                        "gene_id","name","class","family"
+    gene_interactions -- (DataFrame) loaded from private
+                            input "gene_interactions"
     """
     
     
@@ -134,7 +137,36 @@ def build_gene_interaction( cur ):
         )
     """)
     
+    # insert data
+    df = gene_interactions
+    for row in df.index:
+        gene_id,target_id,pubmed_id,interaction_type,experiment = df.loc[row,[
+                "gene Locus ","target locus","pubmed ID","Interaction type","experiment"]]
+        
+        # lookup protein names
+        protein_name = _get_protein_name( metadata_df, gene_id )
+        target_name = _get_protein_name( metadata_df, target_id )
+        
+        # insert one row
+        cur.execute("""
+            INSERT INTO gene_interaction 
+            (gene_id,target_id,pubmed_id,interaction_type,experiment,protein_name,target_name)
+            VALUES (%s,%s,%s,%s,%s,%s,%s)
+        """, (gene_id,target_id,str(pubmed_id),interaction_type,experiment,protein_name,target_name) )
+        
     
+def _get_protein_name( metadata_df, gene_id ):
+    """
+    get the protein name for the given gene_id
+    
+    used in build_gene_interactions()
+    """
+    
+    df = metadata_df
+    df_sub = df[df['gene_id'] == gene_id]
+    if len(df_sub.index) > 0:
+        return df_sub['name'].values[0]
+    return ""
 
 
 def build_seq_features( cur ):

@@ -22,6 +22,7 @@ im = gdb.InputManager()
 old_grassius_names = get_old_grassius_names()
 old_grassius_tfomes = get_old_grassius_tfomes()
 mgdb_assoc = get_maizegdb_associations()
+gene_interactions = pd.read_excel(im['gene_interactions'])
         
 
 # load family criteria and descriptions
@@ -93,7 +94,9 @@ for version in ['v3','v4','v5']:
 cb = ChadoBuilder()
 
 # create non-chado tables
-cb.build_grassius_tables( df, gene_versions, family_desc_df, old_grassius_names, old_grassius_tfomes )
+cb.build_grassius_tables( df, gene_versions, family_desc_df, 
+                         old_grassius_names, old_grassius_tfomes, 
+                         gene_interactions )
 
     
 # insert sequences from fasta files

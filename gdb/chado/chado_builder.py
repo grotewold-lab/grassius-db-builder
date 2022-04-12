@@ -383,7 +383,8 @@ class ChadoBuilder:
     
     
     def build_grassius_tables( self, metadata_df, gene_versions, 
-                              family_desc_df, old_grassius_names, old_grassius_tfomes ):
+                              family_desc_df, old_grassius_names, 
+                              old_grassius_tfomes, gene_interactions ):
         """
         Build tables which are necessary for grassius, but 
         are not a part of the chado schema.
@@ -404,6 +405,8 @@ class ChadoBuilder:
                               output from gdb.grassius.get_old_grassius_names()
         old_grassius_tfomes -- (DataFrame) output from 
                                 gdb.grassius.get_old_grassius_tfomes()
+        gene_interactions -- (DataFrame) loaded from private
+                                input "gene_interactions"
         """
         
         all_family_names = set(metadata_df["family"])
@@ -418,7 +421,7 @@ class ChadoBuilder:
                 build_tfome_metadata( cur, old_grassius_tfomes )
                 build_gene_clone( cur, old_grassius_tfomes )
                 build_searchable_clones( cur, metadata_df, old_grassius_tfomes )
-                build_gene_interaction( cur )
+                build_gene_interaction( cur, metadata_df, gene_interactions )
                 build_seq_features( cur )
                 build_uniprot_ids( cur )
                 build_comment_system_urls( cur, all_family_names )
