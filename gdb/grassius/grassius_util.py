@@ -253,6 +253,63 @@ def get_old_grassius_tfomes():
     
     return pd.read_table( InputManager()['old_grassius_tfomes'] ).fillna('')
 
+        
+    
+def get_protein_name_dict( metadata_df ):
+    """
+    get a dictionary where keys are gene_ids, and
+    values are protein names
+    
+    Arguments:
+    ----------
+    metadata_df -- (Dataframe) with columns 'gene_id' 
+                                and 'name'
+    """
+    
+    df = metadata_df
+    return {
+        df.loc[row,"gene_id"] : df.loc[row,"name"]
+        for row in df.index
+    }
+
+
+def get_maize_v3_uniprot_ids():
+    """
+    Get uniprot IDs corresponding with maize v3 gene IDs
+    
+    This involves parsing some parts of a gff3 file,
+    which can be done using BCBio but this is faster
+    
+    return a dictionary where keys are v3 gene IDs,
+    and values are uniprot IDs
+    """
+    
+    path = InputManager()['maize_v3_gff3']
+    
+    result = {}
+    gid_search_str = 'gene:'
+    uid_search_str = 'UniProtKB/TrEMBL%3BAcc:'
+    
+    with open(path) as f:
+        while True:
+            line = f.readline()
+            if not line:
+                break
+                
+            if (gid_search_str in line) and (uid_search_str in line):
+                i = line.index(gid_search_str) + len(gid_search_str)
+                j = line.index(';',i)
+                gene_id = line[i:j]
+                
+                i = line.index(uid_search_str) + len(uid_search_str)
+                j = line.index(']', i)
+                uniprot_id = line[i:j]
+                
+                result[gene_id] = uniprot_id
+                
+    return result
+        
+
     
 def get_maizegdb_associations():
     """

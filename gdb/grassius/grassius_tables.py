@@ -12,6 +12,8 @@
 # These functions should only be called in
 # ChadoBuilder.build_grassius_tables()
 
+from .grassius_util import get_maize_v3_uniprot_ids
+
 
 def build_tfome_metadata( cur, old_grassius_tfomes ):
     """
@@ -24,6 +26,7 @@ def build_tfome_metadata( cur, old_grassius_tfomes ):
     old_grassius_tfomes -- (DataFrame) output from
                             get_old_grassius_tfomes()
     """
+    print('building grassius-specific table "tfome_metadata"...')
     
     # create empty table
     cur.execute("DROP TABLE IF EXISTS tfome_metadata")
@@ -83,6 +86,7 @@ def build_gene_clone( cur, old_grassius_tfomes ):
     old_grassius_tfomes -- (Dataframe) output from 
                             get_old_grassius_tfomes()
     """
+    print('building grassius-specific table "gene_clone"...')
     
     # create empty table
     cur.execute("DROP TABLE IF EXISTS gene_clone")
@@ -107,7 +111,7 @@ def build_gene_clone( cur, old_grassius_tfomes ):
     
 
         
-def build_gene_interaction( cur, metadata_df, gene_interactions ):
+def build_gene_interaction( cur, protein_name_dict, gene_interactions ):
     """
     Build table "gene_interaction"
     
@@ -115,11 +119,12 @@ def build_gene_interaction( cur, metadata_df, gene_interactions ):
     
     Arguments:
     ----------
-    metadata_df -- (DataFrame) a dataframe with columns:
-                        "gene_id","name","class","family"
+    protein_name_dict -- (dict) where keys are gene_ids, values are protein names
+                                output from get_protein_name_dict()
     gene_interactions -- (DataFrame) loaded from private
                             input "gene_interactions"
     """
+    print('building grassius-specific table "gene_interaction"...')
     
     
     # create empty table
@@ -144,8 +149,8 @@ def build_gene_interaction( cur, metadata_df, gene_interactions ):
                 "gene Locus ","target locus","pubmed ID","Interaction type","experiment"]]
         
         # lookup protein names
-        protein_name = _get_protein_name( metadata_df, gene_id )
-        target_name = _get_protein_name( metadata_df, target_id )
+        protein_name = protein_name_dict.get(gene_id, "")
+        target_name = protein_name_dict.get(target_id, "")
         
         # insert one row
         cur.execute("""
@@ -153,20 +158,6 @@ def build_gene_interaction( cur, metadata_df, gene_interactions ):
             (gene_id,target_id,pubmed_id,interaction_type,experiment,protein_name,target_name)
             VALUES (%s,%s,%s,%s,%s,%s,%s)
         """, (gene_id,target_id,str(pubmed_id),interaction_type,experiment,protein_name,target_name) )
-        
-    
-def _get_protein_name( metadata_df, gene_id ):
-    """
-    get the protein name for the given gene_id
-    
-    used in build_gene_interactions()
-    """
-    
-    df = metadata_df
-    df_sub = df[df['gene_id'] == gene_id]
-    if len(df_sub.index) > 0:
-        return df_sub['name'].values[0]
-    return ""
 
 
 def build_seq_features( cur ):
@@ -180,6 +171,7 @@ def build_seq_features( cur ):
     
     If the table already exists it will be replaced
     """
+    print('building grassius-specific table "seq_features"...')
     
     # create empty table
     cur.execute("DROP TABLE IF EXISTS seq_features")
@@ -192,18 +184,20 @@ def build_seq_features( cur ):
     """)
     
     
+    
 
-def build_uniprot_ids( cur ):
+def build_uniprot_ids( cur, protein_name_dict ):
     """
     Build table "uniprot_ids".
     
-    This is a placeholder to make the website work.
-    
-    TODO: insert uniprot IDs
-    TODO: switch to using chado featureprop
-    
     If the table already exists it will be replaced
+    
+    Arguments:
+    ----------
+    protein_name_dict -- (dict) where keys are gene_ids, values are protein names
+                                output from get_protein_name_dict()
     """
+    print('building grassius-specific table "uniprot_ids"...')
     
     # create empty table
     cur.execute("DROP TABLE IF EXISTS uniprot_ids")
@@ -215,8 +209,23 @@ def build_uniprot_ids( cur ):
         )
     """)
     
+    # insert data
+    all_uniprot_ids = get_maize_v3_uniprot_ids()
+    for gene_id,uniprot_id in all_uniprot_ids.items():
+        
+        gene_name = protein_name_dict.get(gene_id)
+        if gene_name is None:
+            continue
+        
+        cur.execute("""
+            INSERT INTO uniprot_ids 
+            (gene_name,uniprot_id)
+            VALUES (%s,%s)
+        """, (gene_name,uniprot_id) )
+        
+    
 
-def build_searchable_clones( cur, metadata_df, old_grassius_tfomes ):
+def build_searchable_clones( cur, protein_name_dict, old_grassius_tfomes ):
     """
     Build table "searchable_clones", based on the 
     current contents of the database
@@ -228,11 +237,12 @@ def build_searchable_clones( cur, metadata_df, old_grassius_tfomes ):
 
     Arguments:
     ----------
-    metadata_df -- (DataFrame) a dataframe with columns:
-                        "gene_id","name","class","family"
+    protein_name_dict -- (dict) where keys are gene_ids, values are protein names
+                                output from get_protein_name_dict()
     old_grassius_tfomes -- (dataframe) output from 
                             get_old_grassius_tfomes()
     """
+    print('building grassius-specific table "searchable_clones"...')
 
     # create empty table
     cur.execute("DROP TABLE IF EXISTS searchable_clones")
@@ -245,15 +255,12 @@ def build_searchable_clones( cur, metadata_df, old_grassius_tfomes ):
     """)
 
     # insert data
-    df = metadata_df
     all_gids = set(old_grassius_tfomes['gene_id'])
     for gid in all_gids:
         
-        df_sub = df[df['gene_id'] == gid]
-        if len(df_sub.index) == 0:
+        name = protein_name_dict.get(gid)
+        if name is None:
             continue
-        
-        name = df_sub['name'].values[0]
         
         clone_list = ' '.join( 
             old_grassius_tfomes.loc[
@@ -285,6 +292,7 @@ def build_comment_system_urls( cur, all_family_names ):
     ----------
     all_family_names -- (list of str)
     """
+    print('building grassius-specific table "comment_system_urls"...')
 
     # create empty table
     cur.execute("DROP TABLE IF EXISTS comment_system_urls")
@@ -331,6 +339,7 @@ def build_default_maize_names( cur, metadata_df, gene_versions,
     old_grassius_tfomes -- (DataFrame) output from 
                             get_old_grassius_tfomes()
     """
+    print('building grassius-specific table "default_maize_names"...')
 
     sorted_families = sorted(list(all_family_names))
         
@@ -394,8 +403,6 @@ def build_gene_name( cur, metadata_df, old_grassius_names ):
     Build table "gene_name".
     
     If the table already exists it will be replaced.
-
-    This is a placeholder to make the website work.
     
     Arguments:
     ----------
@@ -404,6 +411,7 @@ def build_gene_name( cur, metadata_df, old_grassius_names ):
     old_grassius_names -- (DataFrame) names from old grassius website
                           output from get_old_grassius_names()
     """
+    print('building grassius-specific table "gene_name"...')
 
         
     # create empty table
@@ -460,6 +468,7 @@ def build_family_tables( cur, metadata_df, family_desc_df ):
     family_desc_df -- (DataFrame) a dataframe loaded from private 
                         input "family_descriptions"
     """
+    print('building grassius-specific tables "family" and "class_family"...')
 
 
     # create empty tables

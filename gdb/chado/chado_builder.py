@@ -415,15 +415,20 @@ class ChadoBuilder:
         if 'suffix' not in metadata_df.columns:
             metadata_df = parse_protein_names(metadata_df)
             
+        # for performance, extract a dictionary from metadata
+        protein_name_dict = get_protein_name_dict(metadata_df)
+            
         # connect to the database
         with psycopg2.connect(self.conn_str) as conn:
             with conn.cursor() as cur:
+                
+                # build tables
                 build_tfome_metadata( cur, old_grassius_tfomes )
                 build_gene_clone( cur, old_grassius_tfomes )
-                build_searchable_clones( cur, metadata_df, old_grassius_tfomes )
-                build_gene_interaction( cur, metadata_df, gene_interactions )
+                build_searchable_clones( cur, protein_name_dict, old_grassius_tfomes )
+                build_gene_interaction( cur, protein_name_dict, gene_interactions )
                 build_seq_features( cur )
-                build_uniprot_ids( cur )
+                build_uniprot_ids( cur, protein_name_dict )
                 build_comment_system_urls( cur, all_family_names )
                 build_default_maize_names( cur, metadata_df, gene_versions, all_family_names, old_grassius_tfomes )
                 build_gene_name( cur, metadata_df, old_grassius_names )
