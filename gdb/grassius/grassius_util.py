@@ -273,6 +273,21 @@ def get_protein_name_dict( metadata_df ):
     }
 
 
+def get_species_descriptions():
+    """
+    get a dictionary where keys are organism common names,
+    and values are descriptions to appear in the website
+    
+    used in gdb.chado.init_organisms
+    """
+    
+    df = pd.read_csv(InputManager()['species_descriptions'])
+    return {
+        df.loc[row,"common_name"] : df.loc[row,"description"]
+        for row in df.index
+    }
+
+
 def get_maize_v3_uniprot_ids():
     """
     Get uniprot IDs corresponding with maize v3 gene IDs

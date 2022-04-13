@@ -1,6 +1,9 @@
 # this file contains a list of grassius-specific species labels that must be present in the chado table "organism"
 
 
+# local imports
+from ..grassius import get_species_descriptions
+    
     
 
 # required organism rows (abbreviation,genus,species,common_name,infraspecific_name)
@@ -33,27 +36,35 @@ def init_organisms(cur):
     this is used in constructor
     """        
 
+    species_descriptions = get_species_descriptions()
+    
     organisms = {}
 
     for entry in required_organisms:
         c_name, is_name = entry[-2:]
 
+        if c_name not in species_descriptions.keys():
+            print(f'WARNING missing description for organism with common_name "c_name"')
+            description = None
+        else:
+            description = species_descriptions[c_name]
+        
         cur.execute("""
             SELECT organism_id
             FROM organism
             WHERE (common_name = %s) and (infraspecific_name = %s);
         """, (c_name, is_name))
         result = cur.fetchone()
-
+        
         if result is not None:
             org_id = result[0]
         else:
             cur.execute( """
                 INSERT INTO organism
-                (abbreviation,genus,species,common_name,infraspecific_name) 
-                VALUES (%s,%s,%s,%s,%s) 
+                (abbreviation,genus,species,common_name,infraspecific_name,comment) 
+                VALUES (%s,%s,%s,%s,%s,%s) 
                 RETURNING organism_id
-            """, entry )
+            """, entry + [description] )
             result = cur.fetchone()
             org_id = result[0]
 
