@@ -138,7 +138,7 @@ def _get_family_prefixes( gene_families, old_grassius_names, report_folder=None 
     gene_families -- (dataframe) including columns "gene_id" and "family"
                         concatenated outputs from gdb.itak.get_gene_families
     old_grassius_names -- (dataframe) parsed names from old grassius website
-                          output from parse_protein_names()
+                          output from parse_all_protein_names()
     report_folder -- (optional) (str) path to a folder to save text reports
     """
     result = {}
@@ -151,7 +151,7 @@ def _get_family_prefixes( gene_families, old_grassius_names, report_folder=None 
     
     # assert that protein names have been parsed
     if 'prefix' not in old_grassius_names.columns:
-        raise Exception('old_grassius_names should have been parsed using parse_protein_names()')
+        raise Exception('old_grassius_names should have been parsed using parse_all_protein_names()')
               
     all_families = set(gene_families['family'])
         
@@ -179,7 +179,7 @@ def _get_family_prefixes( gene_families, old_grassius_names, report_folder=None 
             
     return result
     
-def parse_protein_names( df ):
+def parse_all_protein_names( df ):
     """
     Extract the numerical suffixes from protein names
     
@@ -197,19 +197,36 @@ def parse_protein_names( df ):
     all_suffixes = []
     
     for name in all_names:
-        i = len(name)-1
-        if name[i] not in '0123456789':
-            raise Exception(f'protein name "{name}" does not end with a number')
-        while name[i] in '0123456789':
-            i -= 1
-        all_prefixes.append(name[:(i+1)])
-        all_suffixes.append(int(name[(i+1):]))
+        prefix,suffix = parse_protein_name(name)
+        all_prefixes.append(prefix)
+        all_suffixes.append(suffix)
         
     # return as dataframe
     df = df.copy()
     df['prefix'] = all_prefixes
     df['suffix'] = all_suffixes
     return df
+
+
+def parse_protein_name( name ):
+    """
+    Extract the prefix and suffix from the given protein name
+    
+    return a list containing
+        prefix (str)
+        suffix (int)
+    """
+    
+    i = len(name)-1
+    if name[i] not in '0123456789':
+        raise Exception(f'protein name "{name}" does not end with a number')
+    while name[i] in '0123456789':
+        i -= 1
+    prefix = name[:(i+1)]
+    suffix = int(name[(i+1):])
+
+    return [prefix,suffix]
+    
                             
                     
     
@@ -239,7 +256,7 @@ def get_old_grassius_names():
     """
     
     old_grassius_names = pd.read_excel( InputManager()['old_grassius_names'] )
-    old_grassius_names = parse_protein_names(old_grassius_names)
+    old_grassius_names = parse_all_protein_names(old_grassius_names)
     return old_grassius_names
 
 

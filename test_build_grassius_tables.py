@@ -47,4 +47,4 @@ cb.build_grassius_tables( df, gene_versions, family_desc_df,
 #        fasta_filepath = im[f"maize_{version}_{suffix}"]
 #        cb.insert_sequences( organism, df, fasta_filepath, is_protein=False )
         
-cb.insert_tfomes( old_grassius_tfomes )
+#cb.insert_tfomes( old_grassius_tfomes )

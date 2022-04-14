@@ -12,7 +12,7 @@
 # These functions should only be called in
 # ChadoBuilder.build_grassius_tables()
 
-from .grassius_util import get_maize_v3_uniprot_ids
+from .grassius_util import get_maize_v3_uniprot_ids, parse_protein_name
 
 
 def build_tfome_metadata( cur, old_grassius_tfomes ):
@@ -166,7 +166,6 @@ def build_seq_features( cur ):
     
     this is a placeholder to make the website work.
     
-    TODO: insert seq features
     TODO: switch to using chado featureprop
     
     If the table already exists it will be replaced
@@ -407,7 +406,7 @@ def build_gene_name( cur, metadata_df, old_grassius_names ):
     Arguments:
     ----------
     metadata_df -- (DataFrame) a dataframe with columns:
-                        "class","family"
+                        "name","prefix","suffix","class","family"
     old_grassius_names -- (DataFrame) names from old grassius website
                           output from get_old_grassius_names()
     """
@@ -421,7 +420,8 @@ def build_gene_name( cur, metadata_df, old_grassius_names ):
             gn_id SERIAL PRIMARY KEY,
             grassius_name text,
             accepted text,
-            synonym text
+            synonym text,
+            hidden_synonym text
         )
     """)
 
@@ -446,11 +446,18 @@ def build_gene_name( cur, metadata_df, old_grassius_names ):
             accepted = 'no'
             synonym = ' '.join(old_names)
             
+        # TODO build hidden synonym with zero-padded suffix
+        prefix,suffix = parse_protein_name(name)
+        suffix = str(suffix)
+        while( len(suffix) < 3 ):
+            suffix = "0" + suffix
+        hidden_synonym = prefix + suffix
+            
         cur.execute("""
             INSERT INTO gene_name 
-            (grassius_name,accepted,synonym)
-            VALUES (%s,%s,%s)
-        """, (name,accepted,synonym))
+            (grassius_name,accepted,synonym,hidden_synonym)
+            VALUES (%s,%s,%s,%s)
+        """, (name,accepted,synonym,hidden_synonym))
     
     
     

@@ -413,7 +413,7 @@ class ChadoBuilder:
         
         # extract numbers from protein names, if necessary
         if 'suffix' not in metadata_df.columns:
-            metadata_df = parse_protein_names(metadata_df)
+            metadata_df = parse_all_protein_names(metadata_df)
             
         # for performance, extract a dictionary from metadata
         protein_name_dict = get_protein_name_dict(metadata_df)
