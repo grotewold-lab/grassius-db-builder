@@ -107,6 +107,8 @@ for suffix in ["cdna","proteins"]:
         cb.insert_sequences( organism, df, fasta_filepath, 
                             is_protein=(suffix=='proteins') )
 
+# insert Jan2022 secondary structure
+cb.insert_secondary_structures()
         
 
 # add tfome sequences

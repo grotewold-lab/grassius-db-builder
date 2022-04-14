@@ -94,7 +94,7 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc, report_
           
     
     # iterate through remaining genes to make new protein names
-    df = gene_families[~gene_families['gene_id'].isin(result.keys())]
+    df = gene_families[~gene_families['gene_id'].isin(result["gene_id"])]
     n = len(df.index)
     for i,row in enumerate(df.index):
         
@@ -286,6 +286,15 @@ def get_species_descriptions():
         df.loc[row,"common_name"] : df.loc[row,"description"]
         for row in df.index
     }
+
+
+def get_secondary_structures():
+    """
+    get a dataframe containing Jan2022 secondary structures
+    for protein transcripts
+    """
+    return pd.read_csv(InputManager()['secondary_structures'], 
+                       header=None, names=['transcript_id','structure'])
 
 
 def get_maize_v3_uniprot_ids():

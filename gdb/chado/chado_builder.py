@@ -433,6 +433,51 @@ class ChadoBuilder:
                 build_default_maize_names( cur, metadata_df, gene_versions, all_family_names, old_grassius_tfomes )
                 build_gene_name( cur, metadata_df, old_grassius_names )
                 build_family_tables( cur, metadata_df, family_desc_df )
+                
+                
+    def insert_secondary_structures(self):
+        """
+        Insert into the grassius-specific table "seq_features"
+        
+        This should be called after inserting protein sequences using
+        insert_sequences()
+        
+        The table will be populated with Jan2022 secondary structure
+        data in html form.
+        
+        This is a band-aid to make the website work for now. Eventually 
+        the website should be updated and secondary structures
+        should be stored in json form similar to pfam, within the 
+        chado table "featureprop".
+        """
+        
+        with psycopg2.connect(self.conn_str) as conn:
+            with conn.cursor() as cur:
+                
+                df = get_secondary_structures()
+                
+                # iterate through secondary structure data
+                for row in df.index:
+                    tid,struct = df.loc[row,['transcript_id','structure']]
+                    
+                    # find corresponding feature id
+                    fid = self._get_feature_id( cur, tid )
+                    if fid is None:
+                        continue
+                        
+                    # insert a row
+                    cur.execute("""
+                        INSERT INTO seq_features 
+                        (feature_id,secondary_structures)
+                        VALUES (%s,%s)
+                    """, (fid,struct) )
+                    
+                    
+        
+        
+        
+        
+        
         
         
         
