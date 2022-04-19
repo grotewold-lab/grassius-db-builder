@@ -279,7 +279,7 @@ def get_old_grassius_names():
     "class","family","name","accepted","prefix","suffix","synonym","v3_id"
     """
     
-    old_grassius_names = pd.read_excel( InputManager()['old_grassius_names'] )
+    old_grassius_names = pd.read_excel( InputManager()['old_grassius_names'] ).fillna('')
     old_grassius_names = parse_all_protein_names(old_grassius_names)
     return old_grassius_names
 
