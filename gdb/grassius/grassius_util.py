@@ -32,9 +32,10 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc, report_
     Arguments:
     ----------
     gene_families -- (dataframe) including columns "gene_id" and "family"
-                        concatenated outputs from gdb.itak.get_gene_families
+                        output from gdb.itak.get_gene_families
                         row-order may effect newly-assigned protein names
     old_grassius_names -- (dataframe) names from old grassius website
+                          including columns 'v3_id', 'name', 'family'
                           output from get_old_grassius_names()
     mgdb_assoc -- (dataframe) relates gene_ids between genome versions
                         output from get_maizegdb_associations()
@@ -123,6 +124,29 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc, report_
             else:
                 result.loc[gid,:] = [gid,new_name,new_family]
     
+    # handle orphans
+    # for each orphan from old grassius...
+    df = old_grassius_names
+    df_old_orphans = df[df['family'] == 'Orphans']
+    for row in df_old_orphans.index:
+        v3_id,old_name = df_old_orphans.loc[row,['v3_id','name']]
+        
+        # if this v3 id hasn't been assigned...
+        if v3_id not in result['gene_id'].values:
+            
+            # assign all related gene ids to the old orphan name
+            rel_ids = _get_related_gene_ids(v3_id,mgdb_assoc)
+            for gid in set(rel_ids):
+                if gid in result["gene_id"]:
+                    conf_name = result.loc[result["gene_id"]==gid,"name"].values[0]
+                    _report(fout_conf,"\n\t".join([
+                        f'\ngene id "{v3_id}" has new name "{old_name}"',
+                        f'but assocated gene_id "{gid}" aleady has name "{conf_name}"'
+                    ]))
+                else:
+                    result.loc[gid,:] = [gid,old_name,'Orphans']
+        
+        
     return result
 
 

@@ -22,6 +22,7 @@ im = gdb.InputManager()
 old_grassius_names = get_old_grassius_names()
 old_grassius_tfomes = get_old_grassius_tfomes()
 mgdb_assoc = get_maizegdb_associations()
+transcript_genes = get_transcript_gene_dict( im['maize_v3_proteins'] )
 gene_interactions = pd.read_excel(im['gene_interactions'])
         
     
@@ -37,9 +38,6 @@ family_desc_df = pd.read_csv(im['family_descriptions'])
 #old_families = set(old_df['family'])
 #new_families = set(family_criteria_df["GRASSIUS"])
 
-    
-#################
- 
 if False:
     # build subset of maize v3 protein fasta
     # containing only genes that where myb-related in old grassius
@@ -103,12 +101,31 @@ def load_itak_results( filename ):
 
 mod_itak_results = load_itak_results('mod_itak_results.txt')
 itak_results = load_itak_results('itak_results.txt')
-raise Exception('test')
+
+
+# modify itak results
+# give myb-related priority over ARR-B and MYB
+# except for cases where there is agreement with old grassius
+
+df = old_grassius_names
+old_myb_gids = df.loc[ df['family']=='MYB', 'v3_id' ].values
+old_arrb_gids = df.loc[ df['family']=='ARR-B', 'v3_id' ].values
+new_mybr_tids = [k for k,v in mod_itak_results.items() if v=='MYB-related']
+for tid in new_mybr_tids:
+    gid = transcript_genes[tid]
+    family = itak_results[tid]
+    if family not in ['MYB','ARR-B']:
+        raise Exception(f'unexpected family "{family}"')
+    if (family=='MYB') and (gid in old_myb_gids):
+        continue
+    if (family=='ARR-B') and (gid in old_arrb_gids):
+        continue
+    itak_results[tid] = 'MYB-related'
+    
 
         
 # convert itak results (based on transcript IDs)
 # to gene -> family classifications
-transcript_genes = get_transcript_gene_dict( im['maize_v3_proteins'] )
 gene_families = get_gene_families( itak_results, transcript_genes, "conflicts.txt" )
 
 
@@ -121,11 +138,13 @@ protein_names = assign_protein_names( gene_families, old_grassius_names, mgdb_as
 df = protein_names
 for row in df.index:
     gid,name,family = df.loc[row,["gene_id","name","family"]]
-    raw_clazz = family_criteria_df.loc[family_criteria_df["GRASSIUS"]==family,"category"].values[0]
-    clazz = "Coreg" if (raw_clazz == "coregulators") else "TF"
+    if family == 'Orphans':
+        clazz = 'Orphans'
+    else:
+        raw_clazz = family_criteria_df.loc[family_criteria_df["GRASSIUS"]==family,"category"].values[0]
+        clazz = "Coreg" if (raw_clazz == "coregulators") else "TF"
     df.loc[row,"class"] = clazz
 df.sort_values("name").to_csv("metadata.csv", index=False)
-
     
     
     
@@ -145,7 +164,7 @@ cb.build_grassius_tables( df, gene_versions, family_desc_df,
                          old_grassius_names, old_grassius_tfomes, 
                          gene_interactions )
 
-    
+
 # insert sequences from fasta files
 for suffix in ["cdna","proteins"]:
     for version in ["v3","v4","v5"]:
@@ -163,4 +182,4 @@ cb.insert_tfomes( old_grassius_tfomes )
 
 
 # save a snapshot of the database that was built
-#cb.write_snapshot( "build_db.sql.tar.gz" )
+cb.write_snapshot( "build_db.sql.tar.gz" )

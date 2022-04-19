@@ -39,6 +39,7 @@ cb.build_grassius_tables( df, gene_versions, family_desc_df,
                          old_grassius_names, old_grassius_tfomes, 
                          gene_interactions )
 
+cb.insert_secondary_structures()
     
 # insert sequences from fasta files
 #for suffix in ["proteins"]:

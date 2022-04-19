@@ -366,13 +366,12 @@ def build_default_maize_names( cur, metadata_df, gene_versions,
         family = df_sub["family"].values[0]
         concat_ids = " ".join(all_gene_ids)
         
-        
         # pick default gene IDs (whichever appears first in metadata)
         did = {}
         for v in ['v3','v4','v5']:
             did[v] = next( (gid 
                             for gid in all_gene_ids 
-                            if gene_versions[gid] == v)
+                            if _get_gene_version(gene_versions,gid) == v)
                           ,"")
             
         # if one of the IDs is related to an old grassius tfome,
@@ -397,6 +396,17 @@ def build_default_maize_names( cur, metadata_df, gene_versions,
         """, (name,nso,family,did["v3"],did["v4"],did["v5"],concat_ids))
                 
             
+def _get_gene_version( gene_versions, gene_id ):
+    """
+    Used in build_default_maize_names()
+    """
+    if gene_id not in gene_versions.keys():
+        print( " ".join([f'WARNING gene id "{gene_id}" is not in gene_versions dictionary.',
+                        'Assuming it is from maize genome v3' ]))
+        return 'v3'
+              
+    return gene_versions[gene_id]
+              
 def build_gene_name( cur, metadata_df, old_grassius_names ):
     """
     Build table "gene_name".
@@ -446,7 +456,7 @@ def build_gene_name( cur, metadata_df, old_grassius_names ):
             accepted = 'no'
             synonym = ' '.join(old_names)
             
-        # TODO build hidden synonym with zero-padded suffix
+        # build hidden synonym with zero-padded suffix
         prefix,suffix = parse_protein_name(name)
         suffix = str(suffix)
         while( len(suffix) < 3 ):
