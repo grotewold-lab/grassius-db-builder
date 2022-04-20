@@ -22,7 +22,7 @@ im = gdb.InputManager()
 old_grassius_names = get_old_grassius_names()
 old_grassius_tfomes = get_old_grassius_tfomes()
 mgdb_assoc = get_maizegdb_associations()
-transcript_genes = get_transcript_gene_dict( im['maize_v3_proteins'] )
+transcript_genes = get_transcript_gene_dict( im['maize_v5_proteins'] )
 gene_interactions = pd.read_excel(im['gene_interactions'])
         
     
@@ -60,7 +60,7 @@ if False:
     build_minified_hmm( im["pfam_hmm"], desired_accessions, "pfam_min.hmm" )
     ir = ItakRunner(reset=True)
     ir.set_database( "pfam_min.hmm", mod_family_criteria_df )
-    mod_itak_results = ir.run_itak( im['maize_v3_proteins'] )
+    mod_itak_results = ir.run_itak( im['maize_v5_proteins'] )
 
     # save results
     with open( "mod_itak_results.txt", "w" ) as fout:
@@ -77,7 +77,7 @@ if False:
     concatenate_hmms( ["pfam_min.hmm",im["selfbuild_hmm"]], "combined.hmm" )
     ir = ItakRunner(reset=True)
     ir.set_database( "combined.hmm", family_criteria_df )
-    itak_results = ir.run_itak( im["maize_v3_proteins"] )
+    itak_results = ir.run_itak( im["maize_v5_proteins"] )
 
     # save results
     with open( "itak_results.txt", "w" ) as fout:
