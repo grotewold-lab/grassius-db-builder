@@ -57,7 +57,8 @@ def read_records_for_gene_ids( fasta_filepath, gene_ids ):
             if gene in gene_ids:
                 yield record
             else:
-                print( f'skipping fasta record with gene id "{gene}"' )
+                #print( f'skipping fasta record with gene id "{gene}"' )
+                pass
     
 def get_gene_id_from_record( record ):
     """

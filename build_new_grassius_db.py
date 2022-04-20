@@ -106,7 +106,6 @@ itak_results = load_itak_results('itak_results.txt')
 # modify itak results
 # give myb-related priority over ARR-B and MYB
 # except for cases where there is agreement with old grassius
-
 df = old_grassius_names
 old_myb_gids = df.loc[ df['family']=='MYB', 'v3_id' ].values
 old_arrb_gids = df.loc[ df['family']=='ARR-B', 'v3_id' ].values
@@ -127,6 +126,29 @@ for tid in new_mybr_tids:
 # convert itak results (based on transcript IDs)
 # to gene -> family classifications
 gene_families = get_gene_families( itak_results, transcript_genes, "conflicts.txt" )
+
+
+# set order of RAV family (previously called 'ABI3-VP1')
+# based on old-grassius 'ABI3-VP1' protein names
+# this will effect the suffixes of the new protein names
+df = gene_families
+df1 = df[df['family'] == 'RAV'].copy()
+for row in df1.index:
+    gid = df1.loc[row,"gene_id"]
+    old_match = old_grassius_names[old_grassius_names["v3_id"] == gid]
+    
+    if len(old_match.index) == 0:
+        order = 9999
+    else:
+        old_family = old_match['family'].values[0]
+        if old_family != 'ABI3-VP1':
+            order = 9999
+        else:
+            order = old_match['suffix'].values[0]
+    df1.loc[row,'order'] = order
+df1 = df1.sort_values('order').drop(columns=['order'])
+df2 = df[df['family'] != 'RAV']
+gene_families = pd.concat([df1,df2])
 
 
 # assign protein names
