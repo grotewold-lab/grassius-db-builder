@@ -85,7 +85,7 @@ class ItakRunner:
         ----------
         hmm_filepath -- (str) the path to an hmm file
         rules_df -- (DataFrame) the criteria for classifying transcripts
-                           output from gdb.hmmer.read_family_criteria()
+                           output from gdb.hmmer.get_family_criteria()
                            must contain columns "Required", "Forbidden", and "GRASSIUS"
         """
         

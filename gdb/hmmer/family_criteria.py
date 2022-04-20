@@ -1,10 +1,18 @@
 # this file contains functions related to the criteria for assigning families to transcripts
 
+# originally the plan was to use only HMMER
+# later we switched to using iTAK to do most of these steps
+# some of these utilities are still used to support iTAK
+# iTAK-specific utils where added in gdb.itak
+
+from ..input_manager import InputManager
 import pandas as pd
 
-def read_family_criteria(path):
+def get_family_criteria():
     """
-    Load an excel sheet containing rules for assigning families to protein sequences
+    Get rules for assigning families to protein sequences
+    
+    Rules are loaded from private input "family_rules" (excel sheet)
     
     The following columns will be considered in an automated pipeline:
         "GRASSIUS" - the family name
@@ -13,8 +21,10 @@ def read_family_criteria(path):
     
     Formatting of "Required" and "Forbidden" columns is based on iTAK
     
-    return a dataframe
+    return a dataframe 
     """
+    
+    path = InputManager()["family_rules"]
     return pd.read_excel(path).fillna('').iloc[:,:12]
 
 
@@ -26,7 +36,7 @@ def get_relevant_accessions(family_criteria_df):
     
     Arguments:
     ----------
-    family_criteria_df -- (DataFrame) criteria returned by read_family_criteria
+    family_criteria_df -- (DataFrame) output from get_family_criteria()
     """
     
     df = family_criteria_df
@@ -53,7 +63,7 @@ def categorize_all_genes( acc_dict, family_criteria_df, transcript_gene_dict ):
                 keys are transcript IDs
                 values are lists of matching accession names
                 
-    family_criteria_df -- (Dataframe) criteria returned by read_family_criteria
+    family_criteria_df -- (DataFrame) output from get_family_criteria()
     
     transcript_gene_dict -- a dictionary where keys are transcript IDs, and values are gene IDs
                             output from gdb.fasta.get_transcript_gene_dict
@@ -84,7 +94,7 @@ def categorize_all_transcripts( acc_dict, family_criteria_df ):
     acc_dict -- (dict) summary of hmmscan results returned by get_acc_dict
                 keys are transcript IDs
                 values are lists of matching accession names
-    family_criteria_df -- (Dataframe) criteria returned by read_family_criteria
+    family_criteria_df -- (DataFrame) output from get_family_criteria()
     
     """
     df = family_criteria_df

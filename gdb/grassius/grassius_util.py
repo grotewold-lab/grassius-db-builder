@@ -251,8 +251,6 @@ def parse_protein_name( name ):
 
     return [prefix,suffix]
     
-                            
-                    
     
 def _get_related_gene_ids( gene_id, mgdb_assoc ):
     """
@@ -269,6 +267,19 @@ def _get_related_gene_ids( gene_id, mgdb_assoc ):
     return df.loc[df["name"] == name, "gene_id"].values
 
 
+def get_family_descriptions():
+    """
+    Get desriptions and other metadata about grassius families
+    
+    loaded from private input "family_descriptions"
+    
+    return a dataframe with columns: 
+    "familyname", "abbr", "category", "description"
+    """
+    
+    path = InputManager()['family_descriptions']
+    return pd.read_csv(path).fillna('')
+
 
 def get_old_grassius_names():
     """
@@ -279,7 +290,8 @@ def get_old_grassius_names():
     "class","family","name","accepted","prefix","suffix","synonym","v3_id"
     """
     
-    old_grassius_names = pd.read_excel( InputManager()['old_grassius_names'] ).fillna('')
+    path = InputManager()['old_grassius_names']
+    old_grassius_names = pd.read_excel( path ).fillna('')
     old_grassius_names = parse_all_protein_names(old_grassius_names)
     return old_grassius_names
 
@@ -292,7 +304,8 @@ def get_old_grassius_tfomes():
     "utname","gene_id","sequence","translation"
     """
     
-    return pd.read_table( InputManager()['old_grassius_tfomes'] ).fillna('')
+    path = InputManager()['old_grassius_tfomes']
+    return pd.read_table( path ).fillna('')
 
         
     

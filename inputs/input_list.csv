@@ -1,7 +1,7 @@
 name,description,filename,public_url,md5sum
 chado_template,snapshot of an empty chado database,chado-1.31-no-onto.sql,https://github.com/hexylena/chado-schema-builder/releases/download/1.31-jenkins28/chado-1.31-no-onto.sql.gz,58fa773c014395afa9008e9ac23dc366
 family_rules,criteria for assigning families to transcripts,Current_TF_family_rules.xlsx,,232c0a6bd6574fdc0139294f7d04e4da
-family_descriptions,"description for each family, to appear in the website",family_descriptions.csv,,f6579e4282f8930b8d22b844733b31e3
+family_descriptions,"description for each family, to appear in the website",family_descriptions.csv,,07c8059b2229e01f127aa561b886f798
 selfbuild_hmm,selfbuild HM models,TF_selfbuild.hmm,,70f2ecffeae2bd4a514a82c5ad9251d1
 pfam_hmm,pfam HM models,Pfam-A.hmm,http://ftp.ebi.ac.uk/pub/databases/Pfam/releases/Pfam35.0/Pfam-A.hmm.gz,eb895a2152c0e977cb6cf1fee27e3003
 maize_v3_cdna,Fasta file with maize v3 cdna sequences,Zea_mays.AGPv3.22.cdna.all.fa,https://download.maizegdb.org/B73_RefGen_v3/Zea_mays.AGPv3.22.cdna.all.fa.gz,45d70498e9b0327d387044515f450583

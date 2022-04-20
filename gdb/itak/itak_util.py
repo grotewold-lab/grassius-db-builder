@@ -75,7 +75,7 @@ def build_rules_file( database_folder, rules_df ):
     ----------
     database_folder -- (str) the path of the folder containing TF_Rule.txt
     rules_df -- (DataFrame) the criteria for classifying transcripts
-                       output from gdb.hmmer.read_family_criteria()
+                       output from gdb.hmmer.get_family_criteria()
                        must contain columns "Required", "Forbidden", and "GRASSIUS"
     """
     

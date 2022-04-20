@@ -28,8 +28,8 @@ gene_interactions = pd.read_excel(im['gene_interactions'])
     
 
 # load family criteria and descriptions
-family_criteria_df = read_family_criteria(im["family_rules"])
-family_desc_df = pd.read_csv(im['family_descriptions'])
+family_criteria_df = get_family_criteria()
+family_desc_df = get_family_descriptions()
 
 
 # compare new family names with old family names
