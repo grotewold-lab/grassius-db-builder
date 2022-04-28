@@ -5,7 +5,7 @@
 import pandas as pd
 
 
-def get_gene_families( itak_results, transcript_genes, conflict_report_path=None ):
+def get_gene_families( transcript_families, transcript_genes, conflict_report_path=None ):
     """
     convert from raw itak results (based on transcript IDs)
     to gene_id -> family classifications
@@ -19,7 +19,8 @@ def get_gene_families( itak_results, transcript_genes, conflict_report_path=None
     
     Arguments:
     ----------
-    itak_results -- (dict) output from ItakRunner.run_itak()
+    transcript_families -- (dict) transcript_id -> family
+                    should be based on output from ItakRunner.run_itak()
     transcript_genes -- (dict) transcript_id -> gene_id
                     typically output from gdb.fasta.get_transcript_gene_dict()
     conflict_report_path -- (optional) (str) filepath to save a report of 
@@ -32,7 +33,7 @@ def get_gene_families( itak_results, transcript_genes, conflict_report_path=None
     df = pd.DataFrame(columns=['gene_id','family','transcript_id'])
     
     # iterate through itak results
-    for tid,family in itak_results.items():
+    for tid,family in transcript_families.items():
         gid = transcript_genes[tid]
         if gid in df['gene_id']:
             ex_fam,ex_tid = df.loc[ df['gene_id'] == gid, ['family','transcript_id'] ].values[0]
@@ -57,13 +58,22 @@ def get_gene_families( itak_results, transcript_genes, conflict_report_path=None
 
 def read_itak_output( output_folder ):
     """
-    read itak classification results
+    Get all transcript -> family matches found by iTAK
     
-    return a dictionary where keys are transcript IDs,
-    values are classifications
+    This involves parsing the output file "tf_all_matches.txt"
+    
+    This relies on out modified fork of iTAK which should be 
+    associated with input name "itak_git_repo"
+    https://github.com/grotewold-lab/iTAK
+    
+    Traditionally iTAK outputs just one family for 
+    each input sequence: "tf_classification.txt"
+    
+    return a dataframe with columns "transcript_id", "family"
     """
-    df = pd.read_table(output_folder + "/tf_classification.txt", header = None)
-    return { df.loc[row,0]:df.loc[row,1] for row in df.index }
+    return pd.read_table(output_folder + "/tf_all_matches.txt", 
+                         header=None, names=['transcript_id','family'])
+    
 
 
 def build_rules_file( database_folder, rules_df ):

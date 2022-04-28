@@ -50,26 +50,6 @@ if False:
     raise Exception('test')
 
 if False:
-            
-    # investigate issue with myb-related family
-    # run itak once and exclude some families that seem to
-    # take prioirity over MYB-related
-    df = family_criteria_df
-    mod_family_criteria_df = df[~df['GRASSIUS'].isin(['MYB','ARR-B'])]
-    desired_accessions = get_relevant_accessions(mod_family_criteria_df)
-    build_minified_hmm( im["pfam_hmm"], desired_accessions, "pfam_min.hmm" )
-    ir = ItakRunner(reset=True)
-    ir.set_database( "pfam_min.hmm", mod_family_criteria_df )
-    mod_itak_results = ir.run_itak( im['maize_v3_proteins'] )
-
-    # save results
-    with open( "mod_itak_results.txt", "w" ) as fout:
-        for key,value in mod_itak_results.items():
-            fout.write( f"{key}\t{value}\n" )
-
-    raise Exception('test')
-
-if False:
     
     # run itak with all rules
     desired_accessions = get_relevant_accessions(family_criteria_df)
@@ -77,56 +57,44 @@ if False:
     concatenate_hmms( ["pfam_min.hmm",im["selfbuild_hmm"]], "combined.hmm" )
     ir = ItakRunner(reset=True)
     ir.set_database( "combined.hmm", family_criteria_df )
-    itak_results = ir.run_itak( im["maize_v3_proteins"] )
+    itak_results = ir.run_itak( 'test.fa' )
+    #itak_results = ir.run_itak( im["maize_v3_proteins"] )
 
     # save results
-    with open( "itak_results.txt", "w" ) as fout:
-        for key,value in itak_results.items():
-            fout.write( f"{key}\t{value}\n" )
+    itak_results.to_csv("itak_results.txt", sep="\t", index=False)
 
     raise Exception('test')
 
+# load results as if we had just run iTAK (above)
+itak_results = pd.read_table('itak_results.txt')
 
-# load premade results as if we had used ItakRunner.run_itak
-def load_itak_results( filename ):
-    itak_results = {}
-    with open( filename ) as fin:
-        while True:
-            line = fin.readline()
-            if not line:
-                break
-            parts = line.split("\t")
-            itak_results[parts[0]] = parts[1].strip()
-    return itak_results
-
-mod_itak_results = load_itak_results('mod_itak_results.txt')
-itak_results = load_itak_results('itak_results.txt')
-
-
-# modify itak results
-# give myb-related priority over ARR-B and MYB
+# based on iTAK results, pick one family for each transcript
+# give MYB-Related priority over ARR-B and MYB
 # except for cases where there is agreement with old grassius
+all_transcripts = set(itak_results['transcript_id'])
+transcript_families = {}
 df = old_grassius_names
 old_myb_gids = df.loc[ df['family']=='MYB', 'v3_id' ].values
 old_arrb_gids = df.loc[ df['family']=='ARR-B', 'v3_id' ].values
-new_mybr_tids = [k for k,v in mod_itak_results.items() if v=='MYB-related']
-for tid in new_mybr_tids:
+for tid in all_transcripts:
+    matched_families = itak_results.loc[
+            itak_results['transcript_id'] == tid,
+            'family'].values
     gid = transcript_genes[tid]
-    family = itak_results[tid]
-    if family not in ['MYB','ARR-B']:
-        raise Exception(f'unexpected family "{family}"')
-    if (family=='MYB') and (gid in old_myb_gids):
-        continue
-    if (family=='ARR-B') and (gid in old_arrb_gids):
-        continue
-    itak_results[tid] = 'MYB-related'
-    
-
+    if ('MYB' in matched_families) and (gid in old_myb_gids):
+        transcript_families[tid] = 'MYB'
+    elif ('ARR-B' in matched_families) and (gid in old_arrb_gids):
+        transcript_families[tid] = 'ARR-B'
+    elif ('MYB-related' in matched_families):
+        transcript_families[tid] = 'MYB-related'
+    else:
+        transcript_families[tid] = list(matched_families)[0]
         
 # convert itak results (based on transcript IDs)
 # to gene -> family classifications
-gene_families = get_gene_families( itak_results, transcript_genes, "conflicts.txt" )
+gene_families = get_gene_families( transcript_families, transcript_genes, "conflicts.txt" )
 
+raise Exception('test')
 
 # set order of RAV family (previously called 'ABI3-VP1')
 # based on old-grassius 'ABI3-VP1' protein names
