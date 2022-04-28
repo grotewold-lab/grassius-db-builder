@@ -21,7 +21,7 @@ maize_v4_gff3,annotations for maize v4 genome,Zm-B73-REFERENCE-GRAMENE-4.0_Zm000
 maize_v3_gff3,"annotations for maize v3 genome, including UniProt IDs",Zea_mays.AGPv3.22.gff3,https://download.maizegdb.org/B73_RefGen_v3/Zea_mays.AGPv3.22.gff3.gz,4d8e6eb4e27de01b2860da3fb7e1453e
 hmmer_output_example,example output from command “hmmscan”,hmmscan_output_example.txt,,3198dea85c64a3ec60bf31585f3ddb21
 maizegdb_gene_id_associations,master list of gene model associations from maizeGDB,MaizeGDB_B73_pangene_2020_11.tsv,https://download.maizegdb.org/Pan-genes/MaizeGDB_B73_pangene_2020_11.tsv.gz,dd6b6d7542c4ec123557829fa0facc96
-itak_git_repo,git repository containing iTAK executable,master.zip,https://github.com/kentnf/iTAK/archive/refs/heads/master.zip,d8f313fa69dca2089cccd43f35d40fc2
+itak_git_repo,git repository containing iTAK executable,master.zip,https://github.com/grotewold-lab/iTAK/archive/refs/heads/master.zip,03e176826c1ebb6c463288028cd19152
 old_grassius_tfomes,all data for tfomes present in old grassius website,tfome_data.txt,,30087cbcf483dcbb8680df33142aeb0f
 gene_interactions,list of gene interactions which can be downloaded from old grassius,Grassius_RegNet.xls,,0f84447d734b01062a8dafd1d6b7672d
 species_descriptions,"description of each species, to appear on the website",species_descriptions.csv,,dd53057467246554ccbf513b2ff718ca
