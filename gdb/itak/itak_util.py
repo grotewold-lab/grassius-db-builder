@@ -69,10 +69,24 @@ def read_itak_output( output_folder ):
     Traditionally iTAK outputs just one family for 
     each input sequence: "tf_classification.txt"
     
-    return a dataframe with columns "transcript_id", "family"
+    return a dataframe with columns "transcript_id", "family", "final", where the 
+    "final" column contains True for transcript-family entries that were also 
+    present in the traditional iTAK output.
     """
-    return pd.read_table(output_folder + "/tf_all_matches.txt", 
+    
+    # load custom output file
+    result = pd.read_table(output_folder + "/tf_all_matches.txt", 
                          header=None, names=['transcript_id','family'])
+    result['final'] = False
+    
+    # load traditional output file
+    df = pd.read_table(output_folder + "/tf_classification.txt", header = None)
+    for row in df.index:
+        tid,family = df.loc[row,[0,1]]
+        result.loc[(result['transcript_id']==tid) & (result['family']==family),
+                   "final"] = True
+        
+    return result
     
 
 
