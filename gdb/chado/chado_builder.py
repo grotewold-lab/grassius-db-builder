@@ -384,7 +384,8 @@ class ChadoBuilder:
     
     def build_grassius_tables( self, metadata_df, gene_versions, 
                               family_desc_df, old_grassius_names, 
-                              old_grassius_tfomes, gene_interactions ):
+                              old_grassius_tfomes, gene_interactions, 
+                              domain_descriptions ):
         """
         Build tables which are necessary for grassius, but 
         are not a part of the chado schema.
@@ -407,6 +408,8 @@ class ChadoBuilder:
                                 gdb.grassius.get_old_grassius_tfomes()
         gene_interactions -- (DataFrame) loaded from private
                                 input "gene_interactions"
+        domain_descriptions -- (DataFrame) output from
+                                gdb.grassius.get_domain_descriptions()
         """
         
         all_family_names = set(metadata_df["family"])
@@ -423,6 +426,7 @@ class ChadoBuilder:
             with conn.cursor() as cur:
                 
                 # build tables
+                build_domain_descriptions( cur, domain_descriptions )
                 build_tfome_metadata( cur, old_grassius_tfomes )
                 build_gene_clone( cur, old_grassius_tfomes )
                 build_searchable_clones( cur, protein_name_dict, old_grassius_tfomes )
@@ -433,11 +437,11 @@ class ChadoBuilder:
                 build_default_maize_names( cur, metadata_df, gene_versions, all_family_names, old_grassius_tfomes )
                 build_gene_name( cur, metadata_df, old_grassius_names )
                 build_family_tables( cur, metadata_df, family_desc_df )
-                
+        
                 
     def insert_secondary_structures(self):
         """
-        Insert into the grassius-specific table "seq_features"
+        Build into the grassius-specific table "seq_features"
         
         This should be called after inserting protein sequences using
         insert_sequences()

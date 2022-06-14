@@ -14,6 +14,39 @@
 
 from .grassius_util import get_maize_v3_uniprot_ids, parse_protein_name
 
+def build_domain_descriptions( cur, domain_descriptions ):
+    """
+    Build table "domain_descriptions"
+    
+    If the table already exists it will be replaced.
+    
+    Arguments:
+    ----------
+    domain_descriptions -- (DataFrame) output from
+                            get_domain_descriptions()
+    """
+    print('building grassius-specific table "domain_descriptions"...')
+    
+    # create empty table
+    cur.execute("DROP TABLE IF EXISTS domain_descriptions")
+    cur.execute("""
+        CREATE TABLE domain_descriptions (
+            dd_id SERIAL PRIMARY KEY,
+            accession text,
+            dom_title text,
+            dom_desc text
+        )
+    """)
+    
+    # insert data
+    df = domain_descriptions
+    for row in df.index:
+        acc,title,desc = df.loc[row,['accession','title','description']]
+        cur.execute("""
+            INSERT INTO domain_descriptions (accession,dom_title,dom_desc)
+            VALUES (%s,%s,%s);
+        """, (acc,title,desc) )
+    
 
 def build_tfome_metadata( cur, old_grassius_tfomes ):
     """

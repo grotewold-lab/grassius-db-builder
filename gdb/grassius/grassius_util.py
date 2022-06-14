@@ -307,6 +307,18 @@ def get_old_grassius_tfomes():
     path = InputManager()['old_grassius_tfomes']
     return pd.read_table( path ).fillna('')
 
+
+def get_domain_descriptions():
+    """
+    get titles and descriptions for domain annotations, based on accession names.
+    
+    return a dataframe with columns including:
+    "accession","title","description"
+    """
+    
+    path = InputManager()['domain_descriptions']
+    return pd.read_csv( path ).fillna('')
+
         
     
 def get_protein_name_dict( metadata_df ):

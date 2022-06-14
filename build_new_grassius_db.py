@@ -24,7 +24,7 @@ old_grassius_tfomes = get_old_grassius_tfomes()
 mgdb_assoc = get_maizegdb_associations()
 transcript_genes = get_transcript_gene_dict( im['maize_v3_proteins'] )
 gene_interactions = pd.read_excel(im['gene_interactions'])
-        
+domain_descriptions = get_domain_descriptions()
     
 
 # load family criteria and descriptions
@@ -152,7 +152,7 @@ cb = ChadoBuilder()
 # create non-chado tables
 cb.build_grassius_tables( df, gene_versions, family_desc_df, 
                          old_grassius_names, old_grassius_tfomes, 
-                         gene_interactions )
+                         gene_interactions, domain_descriptions )
 
 
 # insert sequences from fasta files
