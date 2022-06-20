@@ -26,4 +26,4 @@ old_grassius_tfomes,all data for tfomes present in old grassius website,tfome_da
 gene_interactions,list of gene interactions which can be downloaded from old grassius,Grassius_RegNet.xls,,0f84447d734b01062a8dafd1d6b7672d
 species_descriptions,"description of each species, to appear on the website",species_descriptions.csv,,dd53057467246554ccbf513b2ff718ca
 secondary_structures,"(Jan2022) secondary structures of protein transcripts, in html form",secondary_structures.csv,,611797cc64fce5bcbfd5c417dde657fd
-domain_descriptions,"titles and descriptions for pfam domains, based on accession names",domain_descriptions.csv,,0227fe909cca422dddbe8d043e3497ee
+domain_descriptions,"titles and descriptions for pfam domains, based on accession names",domain_descriptions.csv,,ecd20eb7d6d0ab79f027610358aec567
