@@ -27,3 +27,4 @@ gene_interactions,list of gene interactions which can be downloaded from old gra
 species_descriptions,"description of each species, to appear on the website",species_descriptions.csv,,dd53057467246554ccbf513b2ff718ca
 secondary_structures,"(Jan2022) secondary structures of protein transcripts, in html form",secondary_structures.csv,,611797cc64fce5bcbfd5c417dde657fd
 domain_descriptions,"titles and descriptions for pfam domains, based on accession names",domain_descriptions.csv,,ecd20eb7d6d0ab79f027610358aec567
+domain_annotations,pfam domain annotations corresponding with maize protein sequences,all_maize_pfam.json.tar.gz,,2bbb6905c56697f540517dabda421efa

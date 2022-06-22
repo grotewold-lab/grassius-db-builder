@@ -5,6 +5,8 @@ from ..input_manager import InputManager
 
 
 import pandas as pd
+import gzip
+import json
 
 
 def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc, report_folder=None ):
@@ -320,6 +322,20 @@ def get_domain_descriptions():
     return pd.read_csv( path ).fillna('')
 
         
+def get_domain_annotations():
+    """
+    get json data containing domain annotations
+    corresponding with maize protein sequences
+    
+    return a dictionary.
+    """
+    
+    path = InputManager()['domain_annotations']
+    with gzip.open(path, 'r') as fin:
+        s = fin.read().decode('utf-8')
+        s = s[s.index('{'):s.rindex('}')+1]
+        return json.loads(s)
+    
     
 def get_protein_name_dict( metadata_df ):
     """

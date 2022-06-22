@@ -22,9 +22,10 @@ im = gdb.InputManager()
 old_grassius_names = get_old_grassius_names()
 old_grassius_tfomes = get_old_grassius_tfomes()
 mgdb_assoc = get_maizegdb_associations()
-transcript_genes = get_transcript_gene_dict( im['maize_v3_proteins'] )
+transcript_genes = get_transcript_gene_dict( im['maize_v5_proteins'] )
 gene_interactions = pd.read_excel(im['gene_interactions'])
 domain_descriptions = get_domain_descriptions()
+domain_annotations = get_domain_annotations()
     
 
 # load family criteria and descriptions
@@ -66,13 +67,15 @@ if False:
     raise Exception('test')
 
 # load results as if we had just run iTAK (above)
-itak_results = pd.read_table('itak_results.txt')
+itak_results = pd.read_csv('applied_rules.csv')
 
 # based on iTAK results, pick one family for each transcript
+# give certain families priority
 # give MYB-Related priority over ARR-B and MYB
 # except for cases where there is agreement with old grassius
 all_transcripts = set(itak_results['transcript_id'])
 transcript_families = {}
+priority_families = ['AP2/ERF-AP2','MYB']
 df = old_grassius_names
 old_myb_gids = df.loc[ df['family']=='MYB', 'v3_id' ].values
 old_arrb_gids = df.loc[ df['family']=='ARR-B', 'v3_id' ].values
@@ -81,12 +84,19 @@ for tid in all_transcripts:
             itak_results['transcript_id'] == tid,
             'family'].values
     gid = transcript_genes[tid]
+    matching_priority_families = [fam for fam in priority_families if fam in matched_families]
+    
+    # check for special cases
     if ('MYB' in matched_families) and (gid in old_myb_gids):
         transcript_families[tid] = 'MYB'
     elif ('ARR-B' in matched_families) and (gid in old_arrb_gids):
         transcript_families[tid] = 'ARR-B'
-    elif ('MYB-related' in matched_families):
-        transcript_families[tid] = 'MYB-related'
+        
+    # check for prioritized families
+    elif len(matching_priority_families) > 0:
+        transcript_families[tid] = matching_priority_families[0]
+        
+    # default to an arbitrary matching family
     else:
         transcript_families[tid] = list(matched_families)[0]
         
@@ -94,13 +104,13 @@ for tid in all_transcripts:
 # to gene -> family classifications
 gene_families = get_gene_families( transcript_families, transcript_genes, "conflicts.txt" )
 
-raise Exception('test')
 
 # set order of RAV family (previously called 'ABI3-VP1')
 # based on old-grassius 'ABI3-VP1' protein names
 # this will effect the suffixes of the new protein names
 df = gene_families
 df1 = df[df['family'] == 'RAV'].copy()
+df2 = df[df['family'] != 'RAV'].copy()
 for row in df1.index:
     gid = df1.loc[row,"gene_id"]
     old_match = old_grassius_names[old_grassius_names["v3_id"] == gid]
@@ -115,8 +125,8 @@ for row in df1.index:
             order = old_match['suffix'].values[0]
     df1.loc[row,'order'] = order
 df1 = df1.sort_values('order').drop(columns=['order'])
-df2 = df[df['family'] != 'RAV']
 gene_families = pd.concat([df1,df2])
+gene_families.sort_values("family").to_csv("gene_families.csv", index=False)
 
 
 # assign protein names
@@ -165,6 +175,8 @@ for suffix in ["cdna","proteins"]:
 
 # insert Jan2022 secondary structure
 cb.insert_secondary_structures()
+
+cb.insert_domain_annotations( domain_annotations )
         
 
 # add tfome sequences

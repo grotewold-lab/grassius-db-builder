@@ -14,20 +14,22 @@ required_cvterms = [
     [496, 11,524,"gene_by_genome_location",""],
     [1362,11,1414,"supported_by_domain_match","An attribute to describe a feature that has been predicted using sequence similarity of a known domain. [SO:ke]"],
     [327, 11,355,"derives_from",""],
-    [435, 11,463,"clone","A piece of DNA that has been inserted in a vector so that it can be propagated in a host bacterium or some other organism. [SO:ke]"]
+    [435, 11,463,"clone","A piece of DNA that has been inserted in a vector so that it can be propagated in a host bacterium or some other organism. [SO:ke]"],
+    [61467,6,1665543,'polypeptide_domain','']
 ]
 
 
 # "dbxref" is a table in the chado schema
 # required dbxref rows (dbxref_id,db_id,accession)
 required_dbxrefs = [
-    [562,  9, "0000104"],
-    [877,  9, "0000352"],
-    [14,   5, "0000002"],
-    [524,  9, "0000085"],
-    [1414, 9, "0000908"],
-    [463,  9, "0000151"],
-    [355,  9, "derives_from"],
+    [562,     9, "0000104"],
+    [877,     9, "0000352"],
+    [14,      5, "0000002"],
+    [524,     9, "0000085"],
+    [1414,    9, "0000908"],
+    [463,     9, "0000151"],
+    [1665543, 2, "0000417"],
+    [355,     9, "derives_from"],
 ]
     
     
@@ -36,7 +38,8 @@ required_dbxrefs = [
 # required cv rows ( cv_id, name, definition )
 required_cvs = [
     [11,"sequence","The Sequence Ontology"],
-    [8, "taxonomic_rank","A vocabulary of taxonomic ranks (species, family, phylum, etc)"]
+    [8, "taxonomic_rank","A vocabulary of taxonomic ranks (species, family, phylum, etc)"],
+    [6, "SO",""]
 ]
 
 

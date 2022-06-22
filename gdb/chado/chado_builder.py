@@ -366,7 +366,11 @@ class ChadoBuilder:
         
     def _get_feature_id( self, cur, uniquename ):
         """
-        used in _insert_sequence() and _insert_tfome_sequence()
+        return the feature ID of an existing feature with the 
+        given uniquename, or None if it does not exist
+        
+        used in _insert_sequence(), _insert_tfome_sequence(), 
+        insert_domain_annotations()
         """
         
         cur.execute("""
@@ -439,6 +443,68 @@ class ChadoBuilder:
                 build_family_tables( cur, metadata_df, family_desc_df )
         
                 
+    def insert_domain_annotations( self, all_domain_annos ):
+        """
+        Insert domain annotations into the "featureprop" table.
+        
+        This should be called after inserting protein sequences using
+        insert_sequences()
+        
+        Any existing domain annotations will be deleted and replaced.
+        
+        Arguments:
+        ----------
+        all_domain_annos: (dict) json data output from
+                                 gdb.grassius.get_domain_annotations()
+        """
+        
+            
+        # connect to the database
+        with psycopg2.connect(self.conn_str) as conn:
+            with conn.cursor() as cur:
+        
+                # remove existing annotations from database
+                cur.execute("""
+                    DELETE FROM featureprop
+                    WHERE type_id = 61467;
+                """)
+
+                # iterate through the given annotations
+                for tid,anno in all_domain_annos.items():
+                    un = tid.replace( '_P', '_T' )
+                    i = 0
+
+                    # find related feature
+                    fid = self._get_feature_id( cur, un )
+                    if fid is None:
+                        continue
+
+                    # iterate through annotations for this transcript
+                    if not isinstance(anno,list):
+                        anno = [anno]
+                    for entry in anno:
+                        name = entry['@name']
+                        acc = entry['@acc']#.split(".")[0]
+                        all_doms = entry['domains']
+                        if not isinstance(all_doms,list):
+                            all_doms = [all_doms]
+                        for d in all_doms:                        
+
+                            # insert one featureprop entry
+                            dom = {
+                                "name": name, 
+                                "accession": acc, 
+                                "start": d['@alisqfrom'], 
+                                "end": d['@alisqto']
+                            }
+                            sdom = str(dom).replace("'",'"')
+                            cur.execute("""
+                                INSERT INTO featureprop ( feature_id, type_id, value, rank ) 
+                                VALUES ( %s, 61467, %s, %s );
+                            """, (fid,sdom,i))
+
+                            i += 1
+            
     def insert_secondary_structures(self):
         """
         Build into the grassius-specific table "seq_features"
@@ -451,7 +517,7 @@ class ChadoBuilder:
         
         This is a band-aid to make the website work for now. Eventually 
         the website should be updated and secondary structures
-        should be stored in json form similar to pfam, within the 
+        should be stored in json form similar to domains, within the 
         chado table "featureprop".
         """
         
