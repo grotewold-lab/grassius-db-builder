@@ -8,6 +8,7 @@ from .chado_organisms import init_organisms
 import psycopg2
 import hashlib
 import gzip
+from Bio import SeqIO
 
 default_port = 8642
 
@@ -217,7 +218,7 @@ class ChadoBuilder:
         """
         Insert genetic sequences into the database
         
-        This shouldnot be used for tfomes' sequences. Instead use insert_tfomes().
+        This should not be used for tfomes' sequences. Instead use insert_tfomes().
         
         Metadata must be provided for a subset of gene IDs present in the fasta file
         
@@ -253,24 +254,32 @@ class ChadoBuilder:
             with conn.cursor() as cur:
                 
                 # iterate through relevant fasta records
-                for rec in read_records_for_gene_ids(fasta_filepath,all_gene_ids):
-                    gene_id = get_gene_id_from_record(rec)
-                    transcript_id = rec.id
-                    name,clazz,family = df.loc[ df["gene_id"] == gene_id, 
-                                               ["name","class","family"] ].values[0]
-                    
-                    # insert one sequence
-                    fid = self._insert_sequence( cur, org_id, str(rec.seq), gene_id, 
-                                                transcript_id, name, clazz, family, is_protein )
-            
-                    # insert feature_relationship for protein sequences
-                    # protein -> (derives from) -> dna
-                    if is_protein:
-                        related_tid = get_related_tid_from_record( rec )
-                        related_fid = self._get_feature_id( cur, related_tid )
-                        if related_fid is None:
-                            raise Exception(f'missing feature with uniquename "{related_tid}"')
-                        self._insert_frel( cur, fid, "derives_from", related_fid )
+                #for rec in read_records_for_gene_ids(fasta_filepath,all_gene_ids):
+                with open(fasta_filepath) as fin:
+                    for rec in SeqIO.parse(fin, "fasta"):
+                        gene_id = get_gene_id_from_record(rec)
+                        transcript_id = rec.id
+                        
+                        # find corresponding metadata
+                        match = df[df['gene_id']==gene_id]
+                        if len(match.index) > 0:
+                            name,clazz,family = df.loc[ match.index[0], ["name","class","family"] ].values
+                        else:
+                            name,clazz,family = transcript_id,None,None
+
+                        # insert one sequence
+                        fid = self._insert_sequence( cur, org_id, str(rec.seq), gene_id, 
+                                                    transcript_id, name, clazz, family, is_protein )
+
+                        # insert feature_relationship for protein sequences
+                        # protein -> (derives from) -> dna
+                        if is_protein:
+                            related_tid = get_related_tid_from_record( rec )
+                            if related_tid is not None:
+                                related_fid = self._get_feature_id( cur, related_tid )
+                                if related_fid is None:
+                                    raise Exception(f'missing feature with uniquename "{related_tid}"')
+                                self._insert_frel( cur, fid, "derives_from", related_fid )
                         
                         
             
@@ -305,11 +314,12 @@ class ChadoBuilder:
               self._checksum(sequence),type_id))
         (feature_id,) = cur.fetchone()
             
-        if not is_protein: 
-            # insert featureprops for dna sequences
+        # insert featureprops
+        self._insert_fprop( cur, feature_id, "gene_by_genome_location", gene_id )
+        if clazz is not None:
             self._insert_fprop( cur, feature_id, "class", clazz )
+        if family is not None:
             self._insert_fprop( cur, feature_id, "supported_by_domain_match", family )
-            self._insert_fprop( cur, feature_id, "gene_by_genome_location", gene_id )
             
         return feature_id
         
@@ -471,39 +481,43 @@ class ChadoBuilder:
 
                 # iterate through the given annotations
                 for tid,anno in all_domain_annos.items():
-                    un = tid.replace( '_P', '_T' )
+                    all_uns = [tid]
+                    if '_P' in tid:
+                        all_uns.append( tid.replace( '_P', '_T' ) )
                     i = 0
+                    
+                    for un in all_uns:
 
-                    # find related feature
-                    fid = self._get_feature_id( cur, un )
-                    if fid is None:
-                        continue
+                        # find related feature
+                        fid = self._get_feature_id( cur, un )
+                        if fid is None:
+                            continue
 
-                    # iterate through annotations for this transcript
-                    if not isinstance(anno,list):
-                        anno = [anno]
-                    for entry in anno:
-                        name = entry['@name']
-                        acc = entry['@acc']#.split(".")[0]
-                        all_doms = entry['domains']
-                        if not isinstance(all_doms,list):
-                            all_doms = [all_doms]
-                        for d in all_doms:                        
+                        # iterate through annotations for this transcript
+                        if not isinstance(anno,list):
+                            anno = [anno]
+                        for entry in anno:
+                            name = entry['@name']
+                            acc = entry['@acc']#.split(".")[0]
+                            all_doms = entry['domains']
+                            if not isinstance(all_doms,list):
+                                all_doms = [all_doms]
+                            for d in all_doms:                        
 
-                            # insert one featureprop entry
-                            dom = {
-                                "name": name, 
-                                "accession": acc, 
-                                "start": d['@alisqfrom'], 
-                                "end": d['@alisqto']
-                            }
-                            sdom = str(dom).replace("'",'"')
-                            cur.execute("""
-                                INSERT INTO featureprop ( feature_id, type_id, value, rank ) 
-                                VALUES ( %s, 61467, %s, %s );
-                            """, (fid,sdom,i))
+                                # insert one featureprop entry
+                                dom = {
+                                    "name": name, 
+                                    "accession": acc, 
+                                    "start": d['@alisqfrom'], 
+                                    "end": d['@alisqto']
+                                }
+                                sdom = str(dom).replace("'",'"')
+                                cur.execute("""
+                                    INSERT INTO featureprop ( feature_id, type_id, value, rank ) 
+                                    VALUES ( %s, 61467, %s, %s );
+                                """, (fid,sdom,i))
 
-                            i += 1
+                                i += 1
             
     def insert_secondary_structures(self):
         """

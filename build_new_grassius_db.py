@@ -147,7 +147,6 @@ for row in df.index:
 df.sort_values("name").to_csv("metadata.csv", index=False)
     
     
-    
 # build gene_id -> genome_version dictionary
 gene_versions = {}
 for version in ['v3','v4','v5']:
@@ -163,6 +162,10 @@ cb = ChadoBuilder()
 cb.build_grassius_tables( df, gene_versions, family_desc_df, 
                          old_grassius_names, old_grassius_tfomes, 
                          gene_interactions, domain_descriptions )
+
+
+    
+    
 
 
 # insert sequences from fasta files

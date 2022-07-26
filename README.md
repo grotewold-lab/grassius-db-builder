@@ -96,3 +96,12 @@ checking integrity of input "maize_v5_proteins"...
 all inputs verified. Recommend backing up this folder:
 	/home/tessmero/Documents/github/grassius-db-builder/inputs
 ```
+
+### Reset docker environment
+
+The gdb.chado module provides functions to build a new database in a docker container. By default it will attempt to connect to an existing docker container "gdb-chado-container". To test a pipeline from start to finish, the docker environment should be reset:
+
+```
+docker container kill gdb-chado-container
+docker container prune
+```
