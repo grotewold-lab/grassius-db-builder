@@ -185,6 +185,8 @@ cb.insert_domain_annotations( domain_annotations )
 # add tfome sequences
 cb.insert_tfomes( old_grassius_tfomes )
 
+# apply patches
+apply_all_patches(cb)
 
 # save a snapshot of the database that was built
 cb.write_snapshot( "build_db.sql.tar.gz" )
