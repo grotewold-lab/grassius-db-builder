@@ -16,10 +16,6 @@ def apply_patch(cb):
     swap protein names with synonyms for "AP2/ERF-AP2" family
     """
     
-    # debug
-    print( 'hello world! p010' )
-    return
-    
     with psycopg2.connect(cb.conn_str) as conn:
         with conn.cursor() as cur:
 

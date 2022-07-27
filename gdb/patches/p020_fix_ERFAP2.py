@@ -17,10 +17,6 @@ def apply_patch(cb):
     switch remaining "ZmERFAP2_..." protein names to "ZmEREB..."
     """
     
-    # debug
-    print( 'hello world! p020' )
-    return
-    
     with psycopg2.connect(cb.conn_str) as conn:
         with conn.cursor() as cur:
 

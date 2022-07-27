@@ -1,4 +1,5 @@
 
+import os
 import pandas as pd
 import gzip
 import json
@@ -6,14 +7,12 @@ import pickle
 import requests
 import psycopg2
 
+from gdb.hmmer import get_family_criteria
+
 def apply_patch( cb ):
     """
     create/replace tables 'family_domain_colors' and 'default_domains'
     """
-    
-    # debug
-    print( 'hello world! p030' )
-    return
     
     #def lookup_tid_of_interest(name):
     #    url = "http://localhost:8080/proteininfor/Maize/" + name
@@ -38,7 +37,9 @@ def apply_patch( cb ):
 
 
     # identify transcript of interest for each protein name
-    with open('tids_of_interest.pi', 'rb') as f:
+    folder = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(folder,'tids_of_interest.pi')
+    with open(path, 'rb') as f:
         tids_of_interest = pickle.load(f)
 
 
@@ -96,11 +97,13 @@ def apply_patch( cb ):
 
             # iterate through protein names
             for name,tid in tids_of_interest.items():
+                print(name)
+                
                 if len(tid) == 0:
-                    cur.execute(f"""
+                    cur.execute("""
                         INSERT INTO default_domains (protein_name,domains)
-                        VALUES( '{name}','');
-                    """)
+                        VALUES( %s,'');
+                    """, (name,) )
                     continue
 
                 # get sequence length
