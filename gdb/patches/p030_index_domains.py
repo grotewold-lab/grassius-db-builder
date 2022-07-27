@@ -12,6 +12,8 @@ from gdb.hmmer import get_family_criteria
 def apply_patch( cb ):
     """
     create/replace tables 'family_domain_colors' and 'default_domains'
+    
+    these tables are used to boost performance of domain annotation graphics
     """
     
     #def lookup_tid_of_interest(name):

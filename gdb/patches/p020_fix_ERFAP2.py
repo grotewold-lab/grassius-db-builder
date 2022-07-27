@@ -14,6 +14,7 @@ from gdb.chado import *
 
 def apply_patch(cb):
     """
+    after swapping synonyms with names for the ERFAP2 family,
     switch remaining "ZmERFAP2_..." protein names to "ZmEREB..."
     """
     
