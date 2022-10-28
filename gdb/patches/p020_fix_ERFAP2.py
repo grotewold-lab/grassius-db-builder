@@ -12,6 +12,17 @@ from gdb.itak import *
 from gdb.grassius import *
 from gdb.chado import *
 
+
+def has_dd_table(cb):
+    with psycopg2.connect(cb.conn_str) as conn:
+        with conn.cursor() as cur:
+            try:
+                cur.execute("select * from default_domains limit 1")
+                return True
+            except:
+                return False
+
+
 def apply_patch(cb):
     """
     after swapping synonyms with names for the ERFAP2 family,
@@ -51,11 +62,12 @@ def apply_patch(cb):
 
                 # default_domains
                 # select * from default_domains where protein_name = 'ZmERFAP2_21'
-                cur.execute("""
-                    UPDATE default_domains
-                    SET protein_name = %s
-                    WHERE protein_name = %s
-                """, (new_protein_name,old_protein_name) )
+                if has_dd_table(cb):
+                    cur.execute("""
+                        UPDATE default_domains
+                        SET protein_name = %s
+                        WHERE protein_name = %s
+                    """, (new_protein_name,old_protein_name) )
 
                 # default_maize_names
                 # select * from default_maize_names where name = 'ZmERFAP2_21';

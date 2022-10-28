@@ -11,6 +11,10 @@ required_organisms = [
     ["Z. mays","Zea","mays","Maize","v3"],
     ["Z. mays","Zea","mays","Maize","v4"],
     ["Z. mays","Zea","mays","Maize","v5"],    
+    ["O. sativa","Oryza","O. sativa","Rice",""],
+    ["S. bicolor","Sorghum","S. bicolor","Sorghum",""],
+    ["S. officinarum","Saccharum","S. officinarum","Sugarcane",""],
+    ["B. distachyon","Brachypodium","B. distachyon","Brachypodium",""]
 ]
 
 

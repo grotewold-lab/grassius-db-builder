@@ -16,6 +16,7 @@ from gdb.hmmer import *
 from gdb.itak import *
 from gdb.grassius import *
 from gdb.chado import *
+from gdb.patches import *
 
 
 im = gdb.InputManager()
