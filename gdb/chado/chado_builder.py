@@ -265,6 +265,7 @@ class ChadoBuilder:
                         if len(match.index) > 0:
                             name,clazz,family = df.loc[ match.index[0], ["name","class","family"] ].values
                         else:
+                            print(f"WARNING gene_id {gene_id} not in metadata")
                             name,clazz,family = transcript_id,None,None
 
                         # insert one sequence

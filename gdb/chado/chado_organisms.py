@@ -11,10 +11,10 @@ required_organisms = [
     ["Z. mays","Zea","mays","Maize","v3"],
     ["Z. mays","Zea","mays","Maize","v4"],
     ["Z. mays","Zea","mays","Maize","v5"],    
-    ["O. sativa","Oryza","O. sativa","Rice",""],
-    ["S. bicolor","Sorghum","S. bicolor","Sorghum",""],
-    ["S. officinarum","Saccharum","S. officinarum","Sugarcane",""],
-    ["B. distachyon","Brachypodium","B. distachyon","Brachypodium",""]
+    ["O. sativa","Oryza","sativa","Rice",""],
+    ["S. bicolor","Sorghum","bicolor","Sorghum",""],
+    ["S. officinarum","Saccharum","officinarum","Sugarcane",""],
+    ["B. distachyon","Brachypodium","distachyon","Brachypodium",""]
 ]
 
 
@@ -48,7 +48,7 @@ def init_organisms(cur):
         c_name, is_name = entry[-2:]
 
         if c_name not in species_descriptions.keys():
-            print(f'WARNING missing description for organism with common_name "c_name"')
+            print(f'WARNING missing description for organism with common_name "{c_name}"')
             description = None
         else:
             description = species_descriptions[c_name]
