@@ -127,7 +127,6 @@ class ChadoBuilder:
                                 gdb.grassius.get_old_grassius_tfomes
         """
         
-        org_id = self.organisms["Maize_v3"]
         
                 
         # connect to the database
@@ -138,6 +137,19 @@ class ChadoBuilder:
                 for row in old_grassius_tfomes.index:
                     utname,dna_seq,prot_seq,gene_id,tn = old_grassius_tfomes.loc[
                         row,['utname','sequence','translation','gene_id','transcript_number']]
+                    
+                    
+                    # find existing genomic dna transcript
+                    try:
+                        gt_fid = self._get_tfome_parent_fid( cur, utname, gene_id, tn )
+                    except:
+                        gt_fid = None
+                        
+                    # identify organism
+                    if gt_fid is None:
+                        org_id = self._infer_organism_for_tfome( gene_id )
+                    else:
+                        org_id = self._get_org_id( cur, gt_fid )
 
                     # insert dna seq
                     tfome_dna_fid = self._insert_tfome_sequence( cur, org_id, utname, dna_seq, False)
@@ -151,31 +163,72 @@ class ChadoBuilder:
                     
                     # insert relationship
                     # tfome dna -> (clone) -> genomic dna transcript
-                    self._insert_tfome_frel( cur, tfome_dna_fid,utname, gene_id,tn )
+                    if gt_fid is not None:
+                        self._insert_frel( cur, tfome_dna_fid, "clone", gt_fid )
+
+                    
+    def _infer_organism_for_tfome( self, gene_id ):
+        """
+        used in insert_tfomes
+        """
+        for pref in ['GRMZM',"AC","EF"]:
+            if gene_id.startswith(pref):
+                return self.organisms["Maize_v3"]
+        if gene_id.startswith('LOC_Os'):
+            return self.organisms["Rice_"]
+        raise Exception(f"unrecognized gene_id \"{gene_id}\"")
+                    
+    def _get_org_id( self, cur, fid ):
+        """
+        used in insert_tfomes
+        """
+        cur.execute("""
+            SELECT organism_id FROM feature
+            WHERE feature_id = %s
+        """, (fid,))
+        (org_id,) = cur.fetchone()
+        return org_id;
             
             
-    def _insert_tfome_frel( self, cur, tfome_dna_fid,utname, gene_id,tn ):
+    def _advance_tn( self, tn ):
         """
-        If necessary, insert one new feature_relationship
-        to relate a tfome to some genomic dna
+        used in _get_tfome_parent_fid()
         
-        tfome dna -> (clone) -> genomic dna transcript
-        
-        used in insert_tfomes()
+        given a tfome transcript number e.g. 'T001',
+        return a new transcript number e.g. 'T002'
         """
+        if (len(tn)>4) or (not (tn.startswith('T0') or tn.startswith('.'))):
+            raise Exception(f"unrecognized transcript number \"{tn}\"")
+        ival = int(tn[-1:])
+        if ival >= 9:
+            raise Exception(f"cannot advance transcript number \"{tn}\"")
+        return tn[:-1] + str(ival+1)
+    
+        
+    def _get_tfome_parent_fid( self, cur, utname, gene_id, tn ):
+        """
+        Get the feature_id of the existing genomic dna transcript,
+        which was cloned to make the given tfome
+        """
+        if tn == '':
+            tn = '.1'
         if len(gene_id.strip()) == 0:
             return
         if "_FG" in gene_id:
             gt_name = gene_id.split('_')[0] + "_FG" + tn
         else:
-            gt_name = f'{gene_id}_{tn}'
+            if tn.startswith('.'):
+                gt_name = f'{gene_id}{tn}'
+            else:
+                gt_name = f'{gene_id}_{tn}'
         gt_fid = self._get_feature_id( cur, gt_name )
         if gt_fid is None:
-            #print(f'could not find dna transcript "{gt_name}" for tfome "{utname}". Skipping adding feature_relationship...')
-            pass
-        else:
-            self._insert_frel( cur, tfome_dna_fid, "clone", gt_fid )
+            print(f'could not find dna transcript "{gt_name}" for tfome "{utname}"')
+            return self._get_tfome_parent_fid( 
+                cur, utname, gene_id, self._advance_tn(tn))
             
+            
+        return gt_fid;
             
         
             
@@ -195,7 +248,7 @@ class ChadoBuilder:
             type_id = self.cvterms["DNA"]
             uniquename = utname
         
-        existing_id = self._get_feature_id( cur, uniquename )
+        existing_id = self._get_feature_id( cur, uniquename, org_id, type_id, utname, sequence, delete_inconsistent=True )
         if existing_id is not None:
             return existing_id
             
@@ -211,8 +264,7 @@ class ChadoBuilder:
         (feature_id,) = cur.fetchone()
         
         return feature_id
-            
-        
+    
         
     def insert_sequences( self, organism, metadata_df, fasta_filepath, is_protein ):
         """
@@ -341,13 +393,16 @@ class ChadoBuilder:
         """, (subject_fid,type_id,object_fid) )
         existing = cur.fetchone()
         
+        
         # insert new frel if necessary
         if existing is None:
+            print(f"inserting new feature_relationship ({subject_fid}->{object_fid})")
             cur.execute("""
                 INSERT INTO feature_relationship (subject_id, type_id, object_id)
                 VALUES (%s,%s,%s)
             """, (subject_fid,type_id,object_fid))
-        
+        else:
+            print(f"feature_relationship already exists ({subject_fid}->{object_fid})")
                                       
     def _insert_fprop( self, cur, feature_id, type_name, value ):
         """
@@ -375,27 +430,71 @@ class ChadoBuilder:
         
         
         
-    def _get_feature_id( self, cur, uniquename ):
+    def _get_feature_id( self, cur, uniquename, 
+                        org_id=None, type_id=None, name=None, sequence=None, 
+                        delete_inconsistent=False ):
         """
         return the feature ID of an existing feature with the 
         given uniquename, or None if it does not exist
+        
+        All optional parameters are used to validate the existing feature, 
+        and are ignored if there is no existing feature
+        
+        If optional parameter delete_inconsistent is set to true,
+        any invalid existing feature will be deleted (then return None)
         
         used in _insert_sequence(), _insert_tfome_sequence(), 
         insert_domain_annotations()
         """
         
         cur.execute("""
-            SELECT feature_id
+            SELECT feature_id, organism_id, type_id, name, residues
             FROM feature
             WHERE uniquename = %s;
         """, (uniquename,))
         result = cur.fetchone()
         
         if result is None:
-            return None
-        return result[0]
+            return None # no existing feature
+        
+        real_fid,real_oid,real_tid,real_name,real_seq = result
+        return self._validate_existing_feature( cur, 
+            real_fid,real_oid,real_tid,real_name,real_seq,
+            org_id, type_id, name, sequence, 
+            delete_inconsistent)
     
-    
+    def _validate_existing_feature( self, cur, 
+            real_fid,real_oid,real_tid,real_name,real_seq,
+            org_id=None, type_id=None, name=None, sequence=None, 
+            delete_inconsistent=False):
+        """
+        used in _get_feature_id
+        """
+        
+        # validate existing feature
+        pref = f"existing feature ({real_fid}) has incorrect ";
+        error_message = None
+        if (org_id is not None) and real_oid != org_id:
+            error_message = f"{pref} organism_id {real_oid} (expected {org_id})"
+        if (type_id is not None) and real_tid != type_id:
+            error_message = f"{pref} type_id {real_tid} (expected {type_id})"
+        if (name is not None) and real_name != name:
+            error_message = f"{pref} name {real_name} (expected {name})"
+        if (sequence is not None) and real_seq != sequence:
+            error_message = f"{pref} residues"
+        
+        # if necessary, delete feature or raise exception
+        if error_message is not None:
+            if delete_inconsistent:
+                print( f"{error_message}, deleting..." )
+                cur.execute(
+                    "DELETE FROM feature WHERE feature_id = %s", 
+                    (real_fid,))
+                return None
+            else:
+                raise Exception(error_message)
+        
+        return real_fid
     
     def build_grassius_tables( self, metadata_df, gene_versions, 
                               family_desc_df, old_grassius_names, 
