@@ -221,6 +221,11 @@ class ChadoBuilder:
                 gt_name = f'{gene_id}{tn}'
             else:
                 gt_name = f'{gene_id}_{tn}'
+                
+                
+        #debug
+        print( f"for utname {utname}, looking for dna transcript feature with uniquename {gt_name}" )
+                
         gt_fid = self._get_feature_id( cur, gt_name )
         if gt_fid is None:
             print(f'could not find dna transcript "{gt_name}" for tfome "{utname}"')
@@ -299,6 +304,7 @@ class ChadoBuilder:
             if col not in metadata_df.columns:
                 raise Exception( f'metadata is missing a required column: "{col}"' )
         df = metadata_df
+        df = df.fillna('')
         all_gene_ids = df["gene_id"].values
                 
         # connect to the database
@@ -315,11 +321,13 @@ class ChadoBuilder:
                         # find corresponding metadata
                         match = df[df['gene_id']==gene_id]
                         if len(match.index) > 0:
-                            name,clazz,family = df.loc[ match.index[0], ["name","class","family"] ].values
+                            name,clazz,family = df.loc[ match.index[0], ["name","class","family"] ].values                            
                         else:
                             print(f"WARNING gene_id {gene_id} not in metadata")
                             name,clazz,family = transcript_id,None,None
-
+                        if name == "":
+                            name = transcript_id
+                            
                         # insert one sequence
                         fid = self._insert_sequence( cur, org_id, str(rec.seq), gene_id, 
                                                     transcript_id, name, clazz, family, is_protein )
@@ -347,14 +355,15 @@ class ChadoBuilder:
         used in insert_sequences()
         """
         
-        existing_id = self._get_feature_id( cur, transcript_id )
-        if existing_id is not None:
-            return existing_id
-        
         if is_protein:
             type_id = self.cvterms["polypeptide"]
         else:
             type_id = self.cvterms["DNA"]
+        
+        existing_id = self._get_feature_id( cur, transcript_id, org_id, type_id, name, sequence, delete_inconsistent=True )
+        
+        if existing_id is not None:
+            return existing_id
             
         # insert feature with sequence and identifiers
         cur.execute("""
@@ -548,8 +557,8 @@ class ChadoBuilder:
                 build_seq_features( cur )
                 build_uniprot_ids( cur, protein_name_dict )
                 build_comment_system_urls( cur, all_family_names )
-                build_default_maize_names( cur, metadata_df, gene_versions, all_family_names, old_grassius_tfomes )
-                build_gene_name( cur, metadata_df, old_grassius_names )
+                build_default_maize_names( cur, metadata_df, gene_versions, old_grassius_tfomes )
+                build_gene_name( cur, metadata_df, all_family_names, old_grassius_names )
                 build_family_tables( cur, metadata_df, family_desc_df )
         
                 

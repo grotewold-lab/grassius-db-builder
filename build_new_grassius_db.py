@@ -135,7 +135,7 @@ protein_names = assign_protein_names( gene_families, old_grassius_names, mgdb_as
                             report_folder = "." )
 
 
-# build metadata 
+# build maize metadata 
 df = protein_names
 for row in df.index:
     gid,name,family = df.loc[row,["gene_id","name","family"]]
@@ -148,6 +148,12 @@ for row in df.index:
 df.sort_values("name").to_csv("metadata.csv", index=False)
     
     
+# append non-maize info to metadata
+df = pd.concat([
+    df,
+    pd.read_csv( im['non_maize_metadata'] )
+], ignore_index=True).fillna('')
+
 # build gene_id -> genome_version dictionary
 gene_versions = {}
 for version in ['v3','v4','v5']:
@@ -166,10 +172,8 @@ cb.build_grassius_tables( df, gene_versions, family_desc_df,
 
 
     
-    
 
-
-# insert sequences from fasta files
+# insert maize sequences from fasta files
 for suffix in ["cdna","proteins"]:
     for version in ["v3","v4","v5"]:
         organism = f"Maize_{version}"
@@ -177,6 +181,14 @@ for suffix in ["cdna","proteins"]:
         cb.insert_sequences( organism, df, fasta_filepath, 
                             is_protein=(suffix=='proteins') )
 
+        
+# insert non-maize sequences from fasta files
+for organism in ['Rice','Sorghum','Sugarcane','Brachypodium']:
+    for suffix in ["cdna","proteins"]:
+        fasta_filepath = im[f"{organism}_{suffix}".lower()]
+        cb.insert_sequences( organism + "_", df, fasta_filepath, 
+                            is_protein=(suffix=='proteins') )
+            
 # insert Jan2022 secondary structure
 cb.insert_secondary_structures()
 

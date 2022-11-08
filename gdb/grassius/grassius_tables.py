@@ -347,8 +347,8 @@ def build_comment_system_urls( cur, all_family_names ):
                     
         
         
-def build_default_maize_names( cur, metadata_df, gene_versions, 
-                              all_family_names, old_grassius_tfomes ):
+def build_default_maize_names( cur, metadata_df, 
+                              gene_versions, old_grassius_tfomes ):
     """
     Build table "default_maize_names".
 
@@ -367,13 +367,10 @@ def build_default_maize_names( cur, metadata_df, gene_versions,
                         "gene_id","name","class","family"
     gene_versions -- (dictionary) where keys are gene_ids,
                         values are genome versions e.g. 'v3'
-    all_family_names -- (list of str) list of distinct family names
     old_grassius_tfomes -- (DataFrame) output from 
                             get_old_grassius_tfomes()
     """
     print('building grassius-specific table "default_maize_names"...')
-
-    sorted_families = sorted(list(all_family_names))
         
     # create empty table
     cur.execute("DROP TABLE IF EXISTS default_maize_names")
@@ -381,7 +378,6 @@ def build_default_maize_names( cur, metadata_df, gene_versions,
         CREATE TABLE default_maize_names (
             dmn_id SERIAL PRIMARY KEY,
             name text,
-            name_sort_order int,
             family text,
             v3_id text,
             v4_id text,
@@ -390,10 +386,22 @@ def build_default_maize_names( cur, metadata_df, gene_versions,
         )
     """)
 
-    # insert one row for each distinct protein name
+        
+    # ignore non-maize data
     df = metadata_df
+    df = df[
+        [
+            not (
+                gid.startswith("LOC_Os") or gid.startswith("Bradi") or gid.startswith("Sb") or gid.startswith("SC") or gid.startswith("PTSo")
+            ) 
+            for gid in df['gene_id'] 
+        ]
+    ]
+            
+    # insert one row for each distinct maize protein name
     all_names = set(df["name"])
     for name in all_names:
+        
         df_sub = df[df["name"] == name]
         all_gene_ids = df_sub["gene_id"].values
         family = df_sub["family"].values[0]
@@ -413,20 +421,13 @@ def build_default_maize_names( cur, metadata_df, gene_versions,
                            for gid in all_gene_ids 
                            if gid in old_grassius_tfomes['gene_id'].values)
                          ,did['v3'])
-        
-
-        # pick name_sort_order
-        # (hidden number used for sorting by protein name)
-        family_sort_val = sorted_families.index(family)
-        name_sort_val = df_sub["suffix"].values[0]
-        nso = int(family_sort_val*10000 + name_sort_val)
             
         # insert row
         cur.execute("""
             INSERT INTO default_maize_names 
-            (name,name_sort_order,family,v3_id,v4_id,v5_id,all_ids)
-            VALUES (%s,%s,%s,%s,%s,%s,%s)
-        """, (name,nso,family,did["v3"],did["v4"],did["v5"],concat_ids))
+            (name,family,v3_id,v4_id,v5_id,all_ids)
+            VALUES (%s,%s,%s,%s,%s,%s)
+        """, (name,family,did["v3"],did["v4"],did["v5"],concat_ids))
                 
             
 def _get_gene_version( gene_versions, gene_id ):
@@ -434,13 +435,13 @@ def _get_gene_version( gene_versions, gene_id ):
     Used in build_default_maize_names()
     """
     if gene_id not in gene_versions.keys():
-        print( " ".join([f'WARNING gene id "{gene_id}" is not in gene_versions dictionary.',
+        print( " ".join([f'WARNING gene id "{gene_id}" is not in maize gene_versions dictionary.',
                         'Assuming it is from maize genome v3' ]))
         return 'v3'
               
     return gene_versions[gene_id]
               
-def build_gene_name( cur, metadata_df, old_grassius_names ):
+def build_gene_name( cur, metadata_df, all_family_names, old_grassius_names ):
     """
     Build table "gene_name".
     
@@ -450,10 +451,13 @@ def build_gene_name( cur, metadata_df, old_grassius_names ):
     ----------
     metadata_df -- (DataFrame) a dataframe with columns:
                         "name","prefix","suffix","class","family"
+    all_family_names -- (list of str) list of distinct family names
     old_grassius_names -- (DataFrame) names from old grassius website
                           output from get_old_grassius_names()
     """
     print('building grassius-specific table "gene_name"...')
+
+    sorted_families = sorted(list(all_family_names))
 
         
     # create empty table
@@ -464,13 +468,15 @@ def build_gene_name( cur, metadata_df, old_grassius_names ):
             grassius_name text,
             accepted text,
             synonym text,
-            hidden_synonym text
+            hidden_synonym text,
+            name_sort_order int
         )
     """)
 
     # insert one row for each protein name
     all_names = set(metadata_df["name"])
     for name in all_names:
+        df_sub = metadata_df[metadata_df['name']==name]
         accepted = 'no'
         synonym = ''
         
@@ -482,7 +488,7 @@ def build_gene_name( cur, metadata_df, old_grassius_names ):
             
         # check if any related gene_ids were in old grassius
         else:
-            all_gene_ids = metadata_df.loc[metadata_df['name']==name,'gene_id'].values
+            all_gene_ids = df_sub['gene_id'].values
             old_names = old_grassius_names.loc[
                             old_grassius_names['v3_id'].isin(all_gene_ids),
                             'name'].values
@@ -495,12 +501,20 @@ def build_gene_name( cur, metadata_df, old_grassius_names ):
         while( len(suffix) < 3 ):
             suffix = "0" + suffix
         hidden_synonym = prefix + suffix
+        
+
+        # pick name_sort_order
+        # (hidden number used for sorting by protein name)
+        family = df_sub["family"].values[0]
+        family_sort_val = sorted_families.index(family)
+        name_sort_val = df_sub["suffix"].values[0]
+        nso = int(family_sort_val*10000 + name_sort_val)
             
         cur.execute("""
             INSERT INTO gene_name 
-            (grassius_name,accepted,synonym,hidden_synonym)
-            VALUES (%s,%s,%s,%s)
-        """, (name,accepted,synonym,hidden_synonym))
+            (grassius_name,accepted,synonym,hidden_synonym,name_sort_order)
+            VALUES (%s,%s,%s,%s,%s)
+        """, (name,accepted,synonym,hidden_synonym,nso))
     
     
     

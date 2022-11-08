@@ -108,11 +108,13 @@ def apply_patch(cb):
 
 
 
-            # update default_maize_names.name_sort_order
+            # update gene_name.name_sort_order
             cur.execute("""
-                SELECT dmn_id,name,name_sort_order 
-                FROM default_maize_names
-                WHERE family = 'AP2/ERF-AP2';
+                SELECT gn.gn_id,gn.grassius_name,name_sort_order 
+                FROM gene_name gn
+                JOIN default_maize_names dmn
+                    ON dmn.name = gn.grassius_name
+                WHERE dmn.family = 'AP2/ERF-AP2';
             """)
             result = cur.fetchall()
             base_value = min([x[2] for x in result])
@@ -120,7 +122,7 @@ def apply_patch(cb):
                 "ZmEREB": 0,
                 "ZmERFAP2_": 300
             }
-            for dmn_id,name,_ in result:
+            for gn_id,name,_ in result:
 
                 accepted = False
                 for prefix,offset in all_prefix_offsets.items():
@@ -134,8 +136,8 @@ def apply_patch(cb):
                     raise Exception('unrecognized name: ' + name )
 
                 cur.execute("""
-                    UPDATE default_maize_names
+                    UPDATE gene_name
                     SET name_sort_order = %s
-                    WHERE dmn_id = %s
-                """, (new_sort_order,dmn_id) )
+                    WHERE gn_id = %s
+                """, (new_sort_order,gn_id) )
 

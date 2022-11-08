@@ -242,6 +242,8 @@ def parse_protein_name( name ):
         prefix (str)
         suffix (int)
     """
+    if name == '':
+        return ['',-1]
     
     i = len(name)-1
     if name[i] not in '0123456789':
