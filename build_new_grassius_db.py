@@ -20,7 +20,7 @@ from gdb.patches import *
 
 
 im = gdb.InputManager()
-old_grassius_names = get_old_grassius_names()
+old_grassius_names = get_old_maize_grassius_names()
 old_grassius_tfomes = get_old_grassius_tfomes()
 mgdb_assoc = get_maizegdb_associations()
 transcript_genes = get_transcript_gene_dict( im['maize_v5_proteins'] )
@@ -67,7 +67,7 @@ if False:
 
     raise Exception('test')
 
-# load results as if we had just run iTAK (above)
+# load MAIZE results as if we had just run iTAK (above)
 itak_results = pd.read_csv('applied_rules.csv')
 
 # based on iTAK results, pick one family for each transcript
@@ -130,7 +130,7 @@ gene_families = pd.concat([df1,df2])
 gene_families.sort_values("family").to_csv("gene_families.csv", index=False)
 
 
-# assign protein names
+# assign maize protein names
 protein_names = assign_protein_names( gene_families, old_grassius_names, mgdb_assoc, 
                             report_folder = "." )
 
@@ -148,11 +148,27 @@ for row in df.index:
 df.sort_values("name").to_csv("metadata.csv", index=False)
     
     
-# append non-maize info to metadata
-df = pd.concat([
-    df,
-    pd.read_csv( im['non_maize_metadata'] )
-], ignore_index=True).fillna('')
+# assign non-maize protein names
+old_nonmaize_names = get_old_maize_grassius_names()
+for input_name in ['2023_brachy_families']:
+    
+    # load results from Dec2023 grass iTAK pipeline
+    # for one species
+    new_families = pd.read_table( im[input_name] )
+    
+    # build metadata for one non-maize species
+    brachy_df = assign_protein_names( 
+        new_families, old_nonmaize_names, 
+        mgdb_assoc=None, report_folder="." )
+
+    # apend metadata for one non-maize species
+    df = pd.concat([
+        df,
+        brachy_df
+    ], ignore_index=True).fillna('')
+    
+    
+    
 
 # build gene_id -> genome_version dictionary
 gene_versions = {}

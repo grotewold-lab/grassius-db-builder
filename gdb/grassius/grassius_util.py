@@ -8,8 +8,9 @@ import pandas as pd
 import gzip
 import json
 
-
-def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc, report_folder=None ):
+      
+    
+def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc=None, report_folder=None ):
     """
     Assign protein names to gene IDs in the traditional grassius form
     
@@ -41,6 +42,7 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc, report_
                           output from get_old_grassius_names()
     mgdb_assoc -- (dataframe) relates gene_ids between genome versions
                         output from get_maizegdb_associations()
+                        (pass None to skip considering pangenome)
     report_folder -- (optional) (str) path to a folder to save text reports
     """
     result = pd.DataFrame(columns=["gene_id","name","family"])
@@ -256,11 +258,13 @@ def parse_protein_name( name ):
     return [prefix,suffix]
     
     
-def _get_related_gene_ids( gene_id, mgdb_assoc ):
+def _get_related_gene_ids( gene_id, mgdb_assoc=None ):
     """
     Get the set of all gene ids that are related to the
     given gene id (according to maizegdb)
     """
+    if mgdb_assoc is None:
+        return [gene_id]
     
     df = mgdb_assoc
     if gene_id not in df["gene_id"].values:
@@ -285,7 +289,7 @@ def get_family_descriptions():
     return pd.read_csv(path).fillna('')
 
 
-def get_old_grassius_names():
+def get_old_maize_grassius_names():
     """
     get families, protein names, v3 gene ids
     corresponding with the old grassius website
@@ -298,6 +302,19 @@ def get_old_grassius_names():
     old_grassius_names = pd.read_excel( path ).fillna('')
     old_grassius_names = parse_all_protein_names(old_grassius_names)
     return old_grassius_names
+
+
+def get_old_nonmaize_grassius_names():
+    """
+    get families, protein names 
+    corresponding with the old grassius website grasses
+    
+    return a dataframe with columns:
+    "class","family","name","accepted","prefix","suffix","synonym","v3_id"
+    """
+    old_nonmaize_names = pd.read_csv( im['old_non_maize_metadata'] )
+    old_nonmaize_names = parse_all_protein_names(old_nonmaize_names)
+    return old_nonmaize_names
 
 
 def get_old_grassius_tfomes():
