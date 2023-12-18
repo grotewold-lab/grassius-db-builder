@@ -10,7 +10,7 @@ import json
 
       
     
-def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc=None, report_folder=None ):
+def assign_protein_names( gene_families, old_grassius_names, species_prefix, mgdb_assoc=None, report_folder=None ):
     """
     Assign protein names to gene IDs in the traditional grassius form
     
@@ -40,6 +40,7 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc=None, re
     old_grassius_names -- (dataframe) names from old grassius website
                           including columns 'v3_id', 'name', 'family'
                           output from get_old_grassius_names()
+    species_prefix -- (str) prefix for all names e.g. 'Zm'
     mgdb_assoc -- (dataframe) relates gene_ids between genome versions
                         output from get_maizegdb_associations()
                         (pass None to skip considering pangenome)
@@ -52,11 +53,11 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc=None, re
         fout_reas = None
         fout_conf = None
     else:
-        fout_reas = open(report_folder + "/reassigned_names.txt", "w")
-        fout_conf = open(report_folder + "/assoc_conflicts.txt", "w")
+        fout_reas = open(report_folder + f"/reassigned_names_{species_prefix}.txt", "w")
+        fout_conf = open(report_folder + f"/assoc_conflicts_{species_prefix}.txt", "w")
     
     # for each family, find or create a protein-name-prefix
-    family_prefixes = _get_family_prefixes( gene_families, old_grassius_names, report_folder )
+    family_prefixes = _get_family_prefixes( gene_families, old_grassius_names, species_prefix, report_folder )
     
     # for each family, pick the next numerical value for assigning new protein names
     family_next_suffixes = {}
@@ -82,7 +83,14 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc=None, re
         if gene_id in result["gene_id"]:
             continue
         rel_ids = _get_related_gene_ids(gene_id,mgdb_assoc)
-        old_match = old_grassius_names[old_grassius_names["v3_id"].isin(rel_ids)]
+        
+        # identify relevant old annotations
+        if( 'v3_id' in old_grassius_names.columns ):
+            # special case for maize with new pangenome
+            old_match = old_grassius_names[old_grassius_names["v3_id"].isin(rel_ids)]
+        else:
+            old_match = old_grassius_names[old_grassius_names["gene_id"].isin(rel_ids)]
+            
         if len(old_match.index)>0:    
             old_family = old_match["family"].values[0]
             if old_family == new_family:
@@ -131,9 +139,16 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc=None, re
     # handle orphans
     # for each orphan from old grassius...
     df = old_grassius_names
-    df_old_orphans = df[df['family'] == 'Orphans']
+    df_old_orphans = df[(df['family'] == 'Orphans') & (df['name'].str.lower().str.startswith(species_prefix.lower()))]
     for row in df_old_orphans.index:
-        v3_id,old_name = df_old_orphans.loc[row,['v3_id','name']]
+        
+        # extract old annotations for one orphan
+        if( 'v3_id' in old_grassius_names.columns ):
+            # special case for maize with new pangenome
+            v3_id,old_name = df_old_orphans.loc[row,['v3_id','name']]
+        else:
+            v3_id,old_name = df_old_orphans.loc[row,['gene_id','name']]
+            
         
         # if this v3 id hasn't been assigned...
         if v3_id not in result['gene_id'].values:
@@ -154,7 +169,7 @@ def assign_protein_names( gene_families, old_grassius_names, mgdb_assoc=None, re
     return result
 
 
-def _get_family_prefixes( gene_families, old_grassius_names, report_folder=None ):
+def _get_family_prefixes( gene_families, old_grassius_names, species_prefix, report_folder=None ):
     """
     Find or create protein-name-prefixes for all families
     
@@ -167,15 +182,17 @@ def _get_family_prefixes( gene_families, old_grassius_names, report_folder=None 
                         concatenated outputs from gdb.itak.get_gene_families
     old_grassius_names -- (dataframe) parsed names from old grassius website
                           output from parse_all_protein_names()
+    species_prefix -- (str) prefix for all names e.g. 'Zm'
     report_folder -- (optional) (str) path to a folder to save text reports
     """
+    
     result = {}
     
     # prepare to write report if necessary
     if report_folder is None:
         fout = None
     else:
-        fout = open(report_folder + "/new_prefixes.txt", "w")
+        fout = open(report_folder + "/new_prefixes_{species_prefix}.txt", "w")
     
     # assert that protein names have been parsed
     if 'prefix' not in old_grassius_names.columns:
@@ -193,11 +210,35 @@ def _get_family_prefixes( gene_families, old_grassius_names, report_folder=None 
     for family_name in set(all_families)-set(result.keys()):
         
         if family_name.startswith('AP2/'):
-            new_prefix = "Zm" + family_name[4:].replace('-','') + "_"
+            new_prefix = species_prefix + family_name[4:].replace('-','') + "_"
         elif family_name == "MADS-MIKC":
-            new_prefix = "ZmMIKC"
+            new_prefix = species_prefix + "MIKC"
+        elif family_name.startswith('MED'):
+            new_prefix = species_prefix + family_name + "_"
+        elif family_name == 'SWI/SNF-BAF60':
+            new_prefix = species_prefix + "BAF60_"
+        elif family_name == 'SWI/SNF-SWI3':
+            new_prefix = species_prefix + "SWI3_"
+        elif family_name == "SHI/STY (SRS)":
+            new_prefix = species_prefix + "SRS"
+        elif family_name == "Ultrapetala":
+            new_prefix = species_prefix + "ULT"
+        elif family_name == "p15 (PC4,Sub1)":
+            new_prefix = species_prefix + "KELP"
+        elif family_name == "Rcd1-like":
+            new_prefix = species_prefix + "Rcd1L"
+        elif family_name == "FLO/LFY":
+            new_prefix = species_prefix + "LFY"
+        elif family_name == "FAR1-like":
+            new_prefix = species_prefix + "FARL"
+        elif family_name == "Aux/IAA":
+            new_prefix = species_prefix + "IAA"
+        elif family_name == "S1Fa-like":
+            new_prefix = species_prefix + "S1Fa"
+        elif family_name == "LEUNIG":
+            new_prefix = species_prefix + "LUG"
         else:
-            new_prefix = "Zm" + family_name[:3].upper()
+            new_prefix = species_prefix + family_name.upper()
             
         _report(fout, f'using new prefix "{new_prefix}" for new family "{family_name}"')
         
@@ -244,7 +285,8 @@ def parse_protein_name( name ):
         prefix (str)
         suffix (int)
     """
-    if name == '':
+    name = str(name)
+    if (name == '') or (name == 'nan'):
         return ['',-1]
     
     i = len(name)-1
@@ -312,7 +354,7 @@ def get_old_nonmaize_grassius_names():
     return a dataframe with columns:
     "class","family","name","accepted","prefix","suffix","synonym","v3_id"
     """
-    old_nonmaize_names = pd.read_csv( im['old_non_maize_metadata'] )
+    old_nonmaize_names = pd.read_csv( InputManager()['old_non_maize_metadata'] )
     old_nonmaize_names = parse_all_protein_names(old_nonmaize_names)
     return old_nonmaize_names
 

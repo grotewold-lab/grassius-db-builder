@@ -149,16 +149,16 @@ df.sort_values("name").to_csv("metadata.csv", index=False)
     
     
 # assign non-maize protein names
-old_nonmaize_names = get_old_maize_grassius_names()
-for input_name in ['2023_brachy_families']:
+old_nonmaize_names = get_old_nonmaize_grassius_names()
+for species,prefix in [['brachy','Bd'],['rice','Os'],['sorghum','Sb'],['sugarcane','Sc']]:
     
     # load results from Dec2023 grass iTAK pipeline
     # for one species
-    new_families = pd.read_table( im[input_name] )
+    new_families = pd.read_table( im[f'2023_{species}_families'] )
     
     # build metadata for one non-maize species
     brachy_df = assign_protein_names( 
-        new_families, old_nonmaize_names, 
+        new_families, old_nonmaize_names, prefix,
         mgdb_assoc=None, report_folder="." )
 
     # apend metadata for one non-maize species
