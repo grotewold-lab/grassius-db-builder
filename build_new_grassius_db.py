@@ -131,8 +131,9 @@ gene_families.sort_values("family").to_csv("gene_families.csv", index=False)
 
 
 # assign maize protein names
-protein_names = assign_protein_names( gene_families, old_grassius_names, mgdb_assoc, 
-                            report_folder = "." )
+protein_names = assign_protein_names( 
+    gene_families, old_grassius_names, 
+    'Zm', mgdb_assoc, report_folder = "." )
 
 
 # build maize metadata 
