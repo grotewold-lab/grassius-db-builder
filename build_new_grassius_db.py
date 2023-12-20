@@ -147,6 +147,12 @@ for row in df.index:
         clazz = "Coreg" if (raw_clazz == "coregulators") else "TF"
     df.loc[row,"class"] = clazz
 df.sort_values("name").to_csv("metadata.csv", index=False)
+
+# extract family->class dict
+family_classes = {}
+for row in df.index:
+    clazz,family = df.loc[row,["class","family"]]
+    family_classes[family] = clazz
     
     
 # assign non-maize protein names
@@ -161,7 +167,8 @@ for species,prefix in [['brachy','Bd'],['rice','Os'],['sorghum','Sb'],['sugarcan
     brachy_df = assign_protein_names( 
         new_families, old_nonmaize_names, prefix,
         mgdb_assoc=None, report_folder="." )
-
+    brachy_df['class'] = [family_classes[fam] for fam in brachy_df['family'].values]
+    
     # apend metadata for one non-maize species
     df = pd.concat([
         df,

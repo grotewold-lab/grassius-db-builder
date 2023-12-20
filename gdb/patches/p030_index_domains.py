@@ -114,7 +114,15 @@ def apply_patch( cb ):
                     SELECT f.residues FROM feature f
                     WHERE f.uniquename=%s
                 """, (protein_tid,) )
-                seq = cur.fetchall()[0][0]
+                exqr = cur.fetchall()
+                if( len(exqr) == 0 ):
+                    print(f"missing feature with expected protein tid '{protein_tid}'")
+                    continue
+                exqr = exqr[0]
+                if( len(exqr) == 0 ):
+                    print(f"missing feature with expected protein tid '{protein_tid}'")
+                    continue
+                seq = exqr[0]
                 seqlen = len(seq)
 
                 # get family

@@ -421,6 +421,7 @@ class ChadoBuilder:
         """
         type_id = self.cvterms[type_name]
         
+        print(f"inserting fprop ({feature_id},{type_id},{value})")
         cur.execute("""
             INSERT INTO featureprop (feature_id, type_id, value)
             VALUES (%s,%s,%s)
